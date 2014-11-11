@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ $# != 1 ]; then
+  echo "USAGE: $0 host";
+  echo "eg: $0 hadoop2";
+  exit 1;
+fi
+
+DIR=$(cd $(dirname "$0"); pwd)
+
+. $DIR/config.sh
+
+ssh $1

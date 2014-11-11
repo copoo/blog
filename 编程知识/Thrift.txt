@@ -1,0 +1,59 @@
+http://thrift.apache.org/
+http://dongxicheng.org/search-engine/thrift-framework-intro/
+http://dongxicheng.org/search-engine/thrift-guide/
+http://blog.csdn.net/amuseme_lu/article/details/6261719
+http://diwakergupta.github.com/thrift-missing-guide
+Thrift: The Missing Guide  http://diwakergupta.github.com/thrift-missing-guide/#_versioning_compatibility
+
+Thrift是一个跨语言的服务部署框架
+
+
+
+Thrift源于大名鼎鼎的facebook之手，在2007年facebook提交Apache基金会将Thrift作为一个开源项目
+
+thrift支持多种协议格，Thrift的代码实现，有专门的TProtocol和TTransport抽象，相互配合，可以实现多种协议，方便集成各种传输方式，目前支持xml、json等。
+
+
+thrift可以支持多种程序语言，例如:  C++, C#, Cocoa, Erlang, Haskell, Java, Ocami, Perl, PHP, Python, Ruby, Smalltalk。在多种不同的语言之间通信thrift可以作为二进制的高性能的通讯中间件，支持数据(对象)序列化和多种类型的RPC服务。
+
+Thrift适用于程序对程序静态的数据交换，需要先确定好他的数据结构，他是完全静态化的，当数据结构发生变化时，必须重新编辑IDL文件，代码生成，再编译载入的流程，跟其他IDL工具相比较可以视为是Thrift的弱项，Thrift适用于搭建大型数据交换及存储的通用工具，对于大型系统中的内部数据传输相对于JSON和xml无论在性能、传输大小上有明显的优势。
+
+1 根据需求,书写 .thrift 服务接口文件 [用tutorial里的demo]
+1.1 需要事先了解 ThriftTypes,对应各语言的本地类型
+http://wiki.apache.org/thrift/ThriftTypes
+1.2 了解thrift 接口定义语言 Thrfit IDL来写 .thrift文件
+http://wiki.apache.org/thrift/ThriftIDL
+1.3 .thrift 接口文件
+
+
+
+功能特性简介 （pdf 简介）
+			http://wiki.apache.org/thrift/ThriftFeatures
+			http://wiki.apache.org/thrift/ThriftIDL
+框架简介	http://dongxicheng.org/search-engine/thrift-framework-intro/
+测试对比	http://blog.csdn.net/amuseme_lu/article/details/6261719
+
+安装和错误 （文库 Thrift的安装与错误解决）
+安装 http://dongxicheng.org/search-engine/thrift-framework-intro/
+
+仅以java为示例 （开发教程）
+Thrift下java服务器与客户端开发指南 http://wenku.baidu.com/view/f77bc1a6f524ccbff1218461.html
+应用编程 http://dongxicheng.org/search-engine/thrift-guide/
+		 http://dongxicheng.org/search-engine/thrift-framework-intro/
+		 http://dongxicheng.org/search-engine/thrift-rpc/
+		 idl语言引用 http://wiki.apache.org/thrift/ThriftIDL
+					 http://wiki.apache.org/thrift/ThriftTypes
+
+
+Thrift与其他传输方式的比较
+    xml与JSON相比体积太大，但是xml传统，也不算复杂。
+    json 体积较小，新颖，但不够完善。
+    thrift 体积超小，使用起来比较麻烦，不如前两者轻便，但是对于1.高并发、2.数据传输量大、3.多语言环境， 满足其中2点使用 thrift还是值得的。
+
+  假定需要传输相同的内容，但使用不同的方式从 1、传输内容所产生的大小 2、传输过程中服务端和客户端所产生的开销，这2个方便进行比较。使用Thrift和其他方式的所产生的内容大小比较结果如下：
+
+  在上图中我们能明显看出，最臃肿的是RMI，其次是xml，使用Thrift的TCompactProtocol协议和Google 的 Protocol Buffers 相差的不算太多，相比而言还是Google 的 Protocol Buffers效果最佳。
+
+使用Thrift 中的协议和其他方式的所产生的运行开销比较结果如下：
+					 
+在上图中我们能明显看出，最占资源是REST2中协议，使用Thrift的TCompactProtocol协议和Google 的 Protocol Buffers 相差的不算太多，相比而言Thrift的TCompactProtocol协议效果最佳。

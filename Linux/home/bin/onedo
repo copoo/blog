@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+if [ $# -le 1 ]; then
+  echo "Usage: $0 host command..."
+  exit 1
+fi
+
+DIR=$(cd $(dirname "$0"); pwd)
+
+. $DIR/config.sh
+
+node=$1
+shift
+
+echo
+echo "$node runing [$@]"
+echo "-----------------------------------------------"
+one_do $node "$@"
+echo "-----------------------------------------------"
+echo
+

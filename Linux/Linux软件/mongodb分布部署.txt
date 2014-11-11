@@ -1,0 +1,594 @@
+
+如果我们要启用Master/Slave模式，而且开启了Auth功能，则需要同时在Master和Slave上的local数据库上增加一个repl的用户
+use local
+db.addUser('repl','replication')
+否则，当我们启动slave时，会报错
+
+
+start_master.sh 
+	#!/usr/bin/env bash
+	DIR=`cd $(dirname $0);pwd`
+	cd $DIR
+	./bin/mongod -f mongod.conf --master --auth &
+
+
+start_slave.sh
+	DIR=`cd $(dirname $0);pwd`
+	cd $DIR
+	./bin/mongod -f mongod.conf --slave -auth --source "space1:27017" --autoresync
+  
+stop.sh
+	DIR=`cd $(dirname $0);pwd`
+	cd $DIR
+	./bin/mongod -f mongod.conf --shutdown
+
+start_client.sh
+	DIR=`cd $(dirname $0);pwd`
+	cd $DIR
+	./bin/mongo space1:27017/test
+
+mongo shell最重要的命令
+
+help
+	db.help()                    help on db methods
+	db.mycoll.help()             help on collection methods
+	sh.help()                    sharding helpers
+	rs.help()                    replica set helpers
+	help admin                   administrative help
+	help connect                 connecting to a db help
+	help keys                    key shortcuts
+	help misc                    misc things to know
+	help mr                      mapreduce
+
+	show dbs                     show database names
+	show collections             show collections in current database
+	show users                   show users in current database
+	show profile                 show most recent system.profile entries with time >= 1ms
+	show logs                    show the accessible logger names
+	show log [name]              prints out the last segment of log in memory, 'global' is default
+	use <db_name>                set current database
+	db.foo.find()                list objects in collection foo
+	db.foo.find( { a : 1 } )     list objects in foo where a == 1
+	it                           result of the last line evaluated; use to further iterate
+	DBQuery.shellBatchSize = x   set default number of items to display on shell
+	exit                         quit the mongo shell
+
+nohup /usr/local/mongodb/bin/mongod run --dbpath=/data/mongodb_data/ --logpath=/data/mongodb_data/mongodb.log --oplogSize=10000M --logappend --auth --master &
+nohup /usr/local/mongodb/bin/mongod run --dbpath=/opt/mongodb_data/ --logpath=/opt/mongodb_data/mongodb.log --logappend --auth --slave --source=192.168.10.10:27017 &
+
+use admin
+db.addUser("root", "u<g<l0g&st@T")
+db.addUser("zgy3", "zgy3")
+
+
+
+http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-static-legacy-1.6.3.tgz
+
+215.123 215.124	第一组节点
+215.126 215.119 第二组节点
+215.108 215.109 第三组节点
+215.110	215.117	第四组节点
+215.112	配置服务节点
+215.127	mongs入口
+
+117 替代113
+
+wget "http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-static-legacy-1.6.2.tgz"
+tar -xzvf mongodb-linux-x86_64-static-legacy-1.6.2.tgz 
+./bin/mongod --help
+-------------------------
+215.123
+cd ~
+wget "http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-static-legacy-1.6.3.tgz"
+tar -xzvf mongodb-linux-x86_64-static-legacy-1.6.3.tgz
+./bin/mongod --help
+cd /home
+mv /root/mongodb-linux-x86_64-static-1.6.3/ mongodb
+cd mongodb/
+./bin/mongod  --version
+mkdir data
+mkdir logs
+./bin/mongod --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend &
+./bin/mongod --pairwith 172.16.215.124 --arbiter 172.16.215.112 --bind_ip 172.16.215.123 --fork --noauth --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend
+tail -f /home/mongodb/logs/mongod.log
+
+215.124
+cd /home
+scp -P 32200 -r zhaigy@172.16.215.123:/home/mongodb .
+cd mongodb
+rm -rf data logs
+mkdir -p /diska/mongodb/data
+mkdir -p /diska/mongodb/logs
+./bin/mongod --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend &
+./bin/mongod --pairwith 172.16.215.123 --arbiter 172.16.215.112 --bind_ip 172.16.215.124 --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+tail -f /diska/mongodb/logs/mongod.log 
+-------------------------
+215.126
+cd /home
+scp -P 32200 -r zhaigy@172.16.215.123:/home/mongodb .
+cd mongodb
+rm -rf data logs
+mkdir -p /diska/mongodb/data
+mkdir -p /diska/mongodb/logs
+./bin/mongod --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend &
+./bin/mongod --pairwith 172.16.215.119 --arbiter 172.16.215.112 --bind_ip 172.16.215.126  --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+tail -f /diska/mongodb/logs/mongod.log 
+
+215.119
+cd /home
+scp -P 32200 -r zhaigy@172.16.215.123:/home/mongodb .
+cd mongodb
+rm -rf data logs
+mkdir -p /diska/mongodb/data
+mkdir -p /diska/mongodb/logs
+./bin/mongod --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend &
+./bin/mongod --pairwith 172.16.215.126 --arbiter 172.16.215.112 --bind_ip 172.16.215.119 --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+tail -f /diska/mongodb/logs/mongod.log 
+-------------------------
+215.108
+cd /home
+scp -P 32200 -r zhaigy@172.16.215.123:/home/mongodb .
+cd mongodb
+rm -rf data logs
+mkdir -p /diska/mongodb/data
+mkdir -p /diska/mongodb/logs
+./bin/mongod --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend &
+./bin/mongod --pairwith 172.16.215.109 --arbiter 172.16.215.112 --bind_ip 172.16.215.108 --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+tail -f /diska/mongodb/logs/mongod.log 
+
+215.109
+cd /home
+scp -P 32200 -r zhaigy@172.16.215.123:/home/mongodb .
+cd mongodb
+rm -rf data/* logs/*
+./bin/mongod --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend &
+./bin/mongod --pairwith 172.16.215.108 --arbiter 172.16.215.112 --bind_ip 172.16.215.109 --fork --noauth --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend
+tail -f /home/mongodb/logs/mongod.log 
+-------------------------
+215.110
+cd /home
+scp -P 32200 -r zhaigy@172.16.215.123:/home/mongodb .
+cd mongodb
+rm -rf data logs
+mkdir -p /diska/mongodb/data
+mkdir -p /diska/mongodb/logs
+./bin/mongod --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend &
+./bin/mongod --pairwith 172.16.215.113 --arbiter 172.16.215.112 --bind_ip 172.16.215.110 --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+tail -f /diska/mongodb/logs/mongod.log 
+
+215.113
+cd /home
+scp -P 32200 -r zhaigy@172.16.215.123:/home/mongodb .
+cd mongodb
+rm -rf data logs
+mkdir -p /diska/mongodb/data
+mkdir -p /diska/mongodb/logs
+./bin/mongod --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend &
+./bin/mongod --pairwith 172.16.215.110 --arbiter 172.16.215.112 --bind_ip 172.16.215.113 --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+tail -f /diska/mongodb/logs/mongod.log
+215.117
+scp -P 32200 -r zhaigy@172.16.215.124:/home/mongodb .
+mkdir -p /diska/mongodb/data
+mkdir -p /diska/mongodb/logs
+-------------------------
+215.112
+cd /home
+scp -P 32200 -r zhaigy@172.16.215.123:/home/mongodb .
+cd mongodb
+rm -rf data logs
+mkdir data
+mkdir logs
+./bin/mongod --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend &
+./bin/mongod --configsvr --bind_ip 172.16.215.112 --fork --noauth --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend
+tail -f /home/mongodb/logs/mongod.log
+
+
+215.127
+cd /home
+scp -P 32200 -r zhaigy@172.16.215.123:/home/mongodb .
+cd mongodb
+rm -rf data logs
+mkdir -p /diska/mongodb/data
+mkdir -p /diska/mongodb/logs
+./bin/mongod --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend &
+./bin/mongos --configdb 172.16.215.112 --bind_ip 0.0.0.0 --fork --logpath=/diska/mongodb/logs/mongod.log --logappend
+tail -f /diska/mongodb/logs/mongod.log
+
+
+在127，mongos上的操作
+./bin/mongo --host 172.16.215.127 --port 27017
+
+show dbs
+use admin
+db
+db.runCommand( { listshards : 1 } );
+db.runCommand( { addshard : "172.16.215.123,172.16.215.124", allowLocal : true } )
+db.runCommand( { listshards : 1 } );
+db.runCommand( { addshard : "172.16.215.119,172.16.215.126", allowLocal : true } )
+db.runCommand( { listshards : 1 } );
+
+use admin;
+db.runCommand( { enablesharding : "test" } );
+use test;
+show collections;
+db.createCollection("test");
+show collections;
+db.runCommand( { shardcollection : "test.test" , key : { _id : 1 } , unique : true } );
+db.test.stats()
+db.runCommand( { shardcollection : "crawler.videos" , key : { _id : 1 } , unique : true } );
+
+现在额外的添加一组节点
+215.108 215.109
+use admin
+db.runCommand( { addshard : "172.16.215.108,172.16.215.109", allowLocal : true } )
+db.runCommand( { listshards : 1 } );
+
+use admin
+db.runCommand( { addshard : "172.16.215.110,172.16.215.113", allowLocal : true } )
+db.runCommand( { listshards : 1 } );
+
+添加仲裁arbiterserver
+-------------------------
+215.112 使用不同的端口，不同的data和logs目录
+cd /home/mongodb
+mkdir arbiterserver
+cd arbiterserver
+mkdir data
+mkdir logs
+./bin/mongod --bind_ip 172.16.215.112 --fork --noauth --dbpath=/home/mongodb/arbiterserver/data/ --logpath=/home/mongodb/arbiterserver/logs/mongod.log --logappend
+tail -f /home/mongodb/arbiterserver/logs/mongod.log
+------------------------------------------------------------
+help                         show help
+show dbs                     show database names
+show collections             show collections in current database
+show users                   show users in current database
+show profile                 show most recent system.profile entries with time >= 1ms
+use <db name>                set curent database to <db name>
+
+db.addUser (username, password)
+db.removeUser(username)
+
+db.cloneDatabase(fromhost)
+db.copyDatabase(fromdb, todb, fromhost)
+db.createCollection(name, { size : ..., capped : ..., max : ... } )
+
+db.getName()
+db.dropDatabase()
+db.printCollectionStats()
+
+db.currentOp() displays the current operation in the db
+db.killOp() kills the current operation in the db
+
+db.getProfilingLevel()
+db.setProfilingLevel(level) 0=off 1=slow 2=all
+
+db.getReplicationInfo()
+db.printReplicationInfo()
+db.printSlaveReplicationInfo()
+db.repairDatabase()
+
+db.version() current version of the server
+
+db.shutdownServer()
+
+
+db.foo.drop() drop the collection
+db.foo.dropIndex(name)
+db.foo.dropIndexes()
+db.foo.getIndexes()
+db.foo.ensureIndex(keypattern,options) - options object has these possible
+                                         fields: name, unique, dropDups
+
+db.foo.find( [query] , [fields])       - first parameter is an optional
+                                         query filter. second parameter
+                                         is optional
+                                         set of fields to return.
+	                                   e.g. db.foo.find(
+                                                  { x : 77 } ,
+                                                  { name : 1 , x : 1 } )
+db.foo.find(...).count()
+db.foo.find(...).limit(n)
+db.foo.find(...).skip(n)
+db.foo.find(...).sort(...)
+db.foo.findOne([query])
+
+db.foo.getDB() get DB object associated with collection
+
+db.foo.count()
+db.foo.group( { key : ..., initial: ..., reduce : ...[, cond: ...] } )
+
+db.foo.renameCollection( newName ) renames the collection
+
+db.foo.stats()
+db.foo.dataSize()
+db.foo.storageSize() - includes free space allocated to this collection
+db.foo.totalIndexSize() - size in bytes of all the indexes
+db.foo.totalSize() - storage allocated for all data and indexes
+db.foo.validate() (slow)
+
+db.foo.insert(obj)
+db.foo.update(query, object[, upsert_bool])
+db.foo.save(obj)
+db.foo.remove(query)                   - remove objects matching query
+                                         remove({}) will remove all
+
+------------------------------------------------------------
+部署一个可分片的表
+show dbs;
+use test;
+db.createCollection("test"); 
+db.runCommand( { enablesharding : "test" } )
+show collections;
+db.runCommand( { shardcollection : "test",key :"_id"} )
+----save------
+db.test.test.stats()
+db.printShardingStatus(); 
+
+
+异常处理
+***********************************
+WARNING WARNING WARNING
+ replica pairs are deprecated
+ see: http://www.mongodb.org/display/DOCS/Replica+Pairs 
+***********************************
+db.$cmd.findOne({ismaster:1});
+如何替换掉一台坏的机器
+123坏，修复后，当全新机器使用，ip仍是123
+
+mongo --host 172.16.215.124
+use admin
+db.$cmd.findOne({replacepeer:1});
+timeout ?
+
+--------------------------------------
+一次死机的修复
+
+./bin/mongod --pairwith 172.16.215.124 --bind_ip 0.0.0.0 --fork --noauth --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend
+./bin/mongod --pairwith 172.16.215.123 --bind_ip 0.0.0.0 --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+
+./bin/mongodump -d crawler -c dramas -o /diska/mongodb/dump
+./bin/mongoexport -d crawler -c dramas -o /diska/mongodb/export/dramas.json
+./bin/mongoexport -d crawler -c dramas -o /home/mongodb/export/dramas.json
+
+123:./bin/mongoexport -d crawler -c dramas -o /home/mongodb/export/dramas.json
+123:./bin/mongoexport -d crawler -c videos -o /home/mongodb/export/videos.json
+124:./bin/mongoexport -d crawler -c dramas -o /diska/mongodb/export/dramas.json
+
+126:./bin/mongoexport --host 172.16.215.126 -d crawler -c dramas -o /diska/mongodb/export/dramas.json
+126:./bin/mongoexport --host 172.16.215.126 -d crawler -c videos -o /diska/mongodb/export/videos.json 
+
+108:./bin/mongoexport --host 172.16.215.108 -d crawler -c dramas -o /diska/mongodb/export/dramas.json
+109:./bin/mongoexport --host 172.16.215.109 -d crawler -c videos -o /home/mongodb/export/videos.json
+
+110:./bin/mongoexport --host 172.16.215.110 -d crawler -c videos -o /diska/mongodb/export/videos.json
+113:./bin/mongoexport --dbpath /diska/mongodb/data -d crawler -c dramas -o /diska/mongodb/export/dramas.json
+
+---------------
+123:./bin/mongodump -d crawler -c dramas -o /diska/mongodb/dump
+123:./bin/mongodump -d crawler -c videos -o /diska/mongodb/dump
+124:./bin/mongodump -d crawler -c dramas -o /diska/mongodb/dump
+
+119:./bin/mongodump --host 172.16.215.119 -d crawler -c videos -o /diska/mongodb/dump
+119:./bin/mongodump --dbpath /diska/mongodb/data -d crawler -c dramas -o /diska/mongodb/dump
+
+108:./bin/mongodump --host 172.16.215.108 -d crawler -c dramas -o /diska/mongodb/dump
+108:./bin/mongodump --host 172.16.215.108 -d crawler -c videos -o /diska/mongodb/dump
+
+110:./bin/mongodump --dbpath /diska/mongodb/data -d crawler -c videos -o /diska/mongodb/dump
+110:./bin/mongodump --dbpath /diska/mongodb/data -d crawler -c dramas -o /diska/mongodb/dump
+
+-----------------------
+重新配置，使用replSet
+123
+124
+./bin/mongod --shardsvr --replSet rs1 --bind_ip 0.0.0.0 --port 27017 --rest --fork --noauth --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend
+./bin/mongod --bind_ip 0.0.0.0 --port 27018 --shardsvr --rest --replSet rs1 --fork --noauth --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend
+./bin/mongod --bind_ip 0.0.0.0 --port 27018 --shardsvr --rest --replSet rs1 --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+rs.initiate({ _id:'rs1',members:[ { _id:0,host:'172.16.215.123:27018'},{ _id:1,host:'172.16.215.124:27018'} ] })
+http://121.9.215.123:28017/_replSet
+http://121.9.215.124:28017/_replSet
+
+126
+119
+./bin/mongod --bind_ip 0.0.0.0 --port 27018 --shardsvr --rest --replSet rs2 --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+./bin/mongod --bind_ip 0.0.0.0 --port 27018 --shardsvr --rest --replSet rs2 --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+rs.initiate({ _id:'rs2',members:[ { _id:0,host:'172.16.215.126:27018'},{ _id:1,host:'172.16.215.119:27018'} ] })
+http://121.9.215.126:28017/_replSet
+http://121.9.215.119:28017/_replSet
+
+108
+109
+./bin/mongod --bind_ip 0.0.0.0 --port 27018 --shardsvr --rest --replSet rs3 --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+./bin/mongod --bind_ip 0.0.0.0 --port 27018 --shardsvr --rest --replSet rs3 --fork --noauth --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend
+rs.initiate({ _id:'rs3',members:[ { _id:0,host:'172.16.215.108:27018'},{ _id:1,host:'172.16.215.109:27018'} ] })
+http://121.9.215.108:28017/_replSet
+http://121.9.215.109:28017/_replSet
+
+110
+117
+./bin/mongod --bind_ip 0.0.0.0 --port 27018 --shardsvr --rest --replSet rs4 --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+./bin/mongod --bind_ip 0.0.0.0 --port 27018 --shardsvr --rest --replSet rs4 --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+rs.initiate({ _id:'rs4',members:[ { _id:0,host:'172.16.215.110:27018'},{ _id:1,host:'172.16.215.117:27018'} ] })
+http://121.9.215.110:28017/_replSet
+http://121.9.215.117:28017/_replSet
+
+112
+./bin/mongod --configsvr --fork --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend
+113
+./bin/mongod --configsvr --fork --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend
+
+
+127
+./bin/mongos --configdb 172.16.215.112:27019,172.16.215.113:27019,172.16.215.114:27019 --bind_ip 0.0.0.0 --fork --logpath=/diska/mongodb/logs/mongod.log --logappend
+
+./bin/mongo
+
+use admin
+db.runCommand( { listshards : 1 } );
+db.runCommand( { addshard : "rs1/172.16.215.123:27018,172.16.215.124:27018"} )
+db.runCommand( { addshard : "rs2/172.16.215.126:27018,172.16.215.119:27018"} )
+db.runCommand( { addshard : "rs3/172.16.215.108:27018,172.16.215.109:27018"} )
+db.runCommand( { addshard : "rs4/172.16.215.110:27018,172.16.215.117:27018"} )
+db.runCommand( { listshards : 1 } );
+
+
+db.runCommand( { enablesharding : "crawler" } )
+show collections;
+db.runCommand( { shardcollection : "crawler.videos",key:{_id:1}} )
+db.dramas.stats()
+db.printShardingStatus(); 
+
+./bin/mongorestore -d crawler -c videos /diska/mongodb/dump/123.crawler/dramas.bson
+./bin/mongorestore -d crawler -c videos /diska/mongodb/dump/110.crawler/dramas.bson
+./bin/mongorestore -d crawler -c videos /diska/mongodb/dump/108.crawler/dramas.bson
+
+
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
+mongodb安装记录
+使用mongodb作为蜘蛛抓取数据的存储，但由于mongodb的异常，导致数据丢失较多。
+尝试修复数据，但是试过种种方式也只能挽回一些。
+在导出了遗留的数据后，决定重装mongo，然后导入数据，然后又失败了...
+对mongodb的稳定性表示怀疑。
+
+后多次读文档和实验，觉得如下配置是比较正确的。（因为之前看的多是旧版本的配置）
+
+使用的版本是开发版的1.7.3 稳定版 是 1.6.4
+
+http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-static-legacy-1.6.4.tgz
+
+215.123 215.124	第一组节点
+215.126 215.119 第二组节点
+215.108 215.109 第三组节点
+215.110	215.117	第四组节点
+215.112,215.113,215.114 配置服务节点
+215.127	mongs入口
+不使用仲裁服务器节点
+
+(因为我们机器上的gclib库较旧，不要使用动态链接的版本)
+wget "http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-static-legacy-1.6.4.tgz"
+tar -xzvf mongodb-linux-x86_64-static-legacy-1.6.4.tgz 
+./bin/mongod --help
+-------------------------
+
+215.123
+cd ~
+wget "http://fastdl.mongodb.org/linux/mongodb-linux-x86_64-static-legacy-1.6.4.tgz"
+tar -xzvf mongodb-linux-x86_64-static-legacy-1.6.4.tgz
+./bin/mongod --help
+cd /home
+mv /root/mongodb-linux-x86_64-static-1.6.4/ mongodb
+cd mongodb/
+./bin/mongod  --version
+mkdir data
+mkdir logs
+
+其它机器的安装是一样的。关键是配置。
+-------------------------
+使用shardsvr 不使用 replSet
+
+123
+124
+./bin/mongod --shardsvr --fork --noauth --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend
+
+
+126
+119
+./bin/mongod --shardsvr --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+./bin/mongod --bind_ip 0.0.0.0 --port 27018 --shardsvr --rest --replSet rs2 --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+rs.initiate({ _id:'rs2',members:[ { _id:0,host:'172.16.215.126:27018'},{ _id:1,host:'172.16.215.119:27018'} ] })
+http://121.9.215.126:28017/_replSet
+http://121.9.215.119:28017/_replSet
+
+108
+109
+./bin/mongod --shardsvr --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+./bin/mongod --bind_ip 0.0.0.0 --port 27018 --shardsvr --rest --replSet rs3 --fork --noauth --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend
+rs.initiate({ _id:'rs3',members:[ { _id:0,host:'172.16.215.108:27018'},{ _id:1,host:'172.16.215.109:27018'} ] })
+http://121.9.215.108:28017/_replSet
+http://121.9.215.109:28017/_replSet
+
+110
+117
+./bin/mongod --shardsvr --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+./bin/mongod --bind_ip 0.0.0.0 --port 27018 --shardsvr --rest --replSet rs4 --fork --noauth --dbpath=/diska/mongodb/data/ --logpath=/diska/mongodb/logs/mongod.log --logappend
+rs.initiate({ _id:'rs4',members:[ { _id:0,host:'172.16.215.110:27018'},{ _id:1,host:'172.16.215.117:27018'} ] })
+http://121.9.215.110:28017/_replSet
+http://121.9.215.117:28017/_replSet
+
+这个是配置服务器。mongodb允许指定1个或者3个配置服务器，不允许指定2个。
+这里指定3个是因为曾经出现过加载配置出错的日志，希望这样安全点。
+112
+./bin/mongod --configsvr --fork --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend
+113
+./bin/mongod --configsvr --fork --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend
+114
+./bin/mongod --configsvr --fork --dbpath=/home/mongodb/data/ --logpath=/home/mongodb/logs/mongod.log --logappend
+
+这个是在主机
+127
+./bin/mongos --configdb 172.16.215.112:27019 --fork --logpath=/diska/mongodb/logs/mongod.log --logappend
+
+如下是在主机上的操作
+./bin/mongo
+
+使用admin库
+use admin
+查看分片配置
+db.runCommand( { listshards : 1 } );
+添加分片子机
+db.runCommand( { addshard : "172.16.215.123:27018"} )
+db.runCommand( { addshard : "172.16.215.126:27018"} )
+db.runCommand( { addshard : "172.16.215.108:27018"} )
+db.runCommand( { addshard : "172.16.215.110:27018"} )
+db.runCommand( { listshards : 1 } );
+
+增加一个库，并标记为可以分片
+db.runCommand( { enablesharding : "crawler" } )
+增加一个表，并标记为可分片，key是分片依赖的索引字段，必须指定
+db.runCommand( { shardcollection : "crawler.videos",key:{_id:1}} )
+成功的话你就可以使用下面的语句看到分片情况，你会看到share之类的值
+db.videos.stats()
+db.printShardingStatus(); 
+
+导入数据
+./bin/mongodump -d crawler -c videos -o /diska/mongodb/dump
+导入数据
+./bin/mongorestore -d crawler -c videos /diska/mongodb/dump/videos.bson
+
+
+其中109机器出错
+[replica set sync] Assertion: 13000:invalid keyNode: { "i" : 0, "n" : 0 }
+但导入仍顺利完成，因为108没有出错。
+
+123机器出错
+[conn17] Assertion: 10334:Invalid BSONObj size: -286331154 (0xEEEEEEEE) first element: _id: 11862336874106197
+
+117出错
+crawler.videos warning: cursor loc null does not match byLoc position 5:6a7ad7c !
+
+在127使用修复数据命令
+db.repairDatabase() 修复后数据变少
+重新导入
+
+
+shard is too big, but can't split: ns:crawler.videos at: shard0002:172.16.215.108:27018
+
+
+
+
+==============================================
+mongodb 的master slave
+==============================================
+./bin/mongod --fork --noauth --dbpath=/diskb/mongodb/data/ --logpath=/diskb/mongodb/logs/mongod.log --logappend
+
+./bin/mongod --fork --noauth --dbpath=/diskb/mongodb2/data/ --logpath=/diskb/mongodb2/logs/mongod.log --logappend
+
+
+./bin/mongod --master --fork --noauth --dbpath=/diskb/mongodb/data/ --logpath=/diskb/mongodb/logs/mongod.log --logappend
+./bin/mongod --slave --source 172.16.245.12 --slavedelay 10 --fork --noauth --dbpath=/diskb/mongodb/data/ --logpath=/diskb/mongodb/logs/mongod.log --logappend

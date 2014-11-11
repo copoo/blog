@@ -1,0 +1,15 @@
+# node.js
+
+[NodeJS开发环境配置](http://www.cnblogs.com/Irving/p/3634232.html)
+
+[WebStorm 有哪些过人之处](http://www.zhihu.com/question/20936155)
+
+[七天学会NodeJS](http://www.open-open.com/lib/view/1392611872538)
+
+API官方文档： <http://nodejs.org/api/http.html>
+
+[ejs快速入门](http://blog.csdn.net/zhangxin09/article/details/18409119)
+
+[express的基本配置项](http://www.ituring.com.cn/article/54974)
+
+[AngularJS最理想开发工具WebStorm](http://blog.fens.me/angularjs-webstorm-ide/)

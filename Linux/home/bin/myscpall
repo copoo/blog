@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+if [ $# -ne 1 ]; then
+  echo "USAGE: $0 filename";
+  echo "eg.: $0 main.cpp";
+  exit 1;
+fi
+
+BIN=$HOME/bin
+. $BIN/config.conf
+
+MYHOST=`hostname`
+for i in $NODES; do
+  [ "$MYHOST" == "$i" ] && continue
+  myscp $1 $i;
+done

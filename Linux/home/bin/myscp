@@ -1,0 +1,29 @@
+#!/bin/sh
+
+if [ $# != 2 ]; then
+  echo "USAGE: $0 filename host";
+  echo "eg.: $0 main.cpp hadoop2";
+  exit 1;
+fi
+
+myip=`hostname -i`
+hostip=`ping -c 1 $2|head -1|sed 's/.* (//;s/).*//'`
+#ips=`/sbin/ifconfig | sed '/.*inet addr:/!d;s///;s/ .*//'|grep -v 127.0.0.1`
+
+if [ $myip = $hostip ]; then
+  echo "$2 is myself, no cp."
+  exit 0;
+fi
+
+dir=$PWD;
+port=9922
+
+if [ -d $1 ]; then
+    cmd="scp -P $port -r ./$1 $2:$dir";
+else 
+    ssh -p $port $2 "mkdir -p $dir";
+    cmd="scp -P $port ./$1 $2:$dir/$1";
+fi
+echo "$cmd";
+$cmd
+

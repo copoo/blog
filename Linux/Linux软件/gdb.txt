@@ -1,0 +1,77 @@
+gdb简单调试命令
+====================================================================================================
+gdb ./bin/search
+gdb -p 21906
+dir /home/zhaigy/download/build/coreseek-3.2.14/csft-3.2.14/src		设置源代码目录
+dir src
+win 打开可视窗口 （要先运行，设断点才会有对应源码出来）
+
+b 设置断点
+b main
+b CreateQueryWord
+b CSphIndex_VLN::SetupQueryWord
+b 11676
+b test.cpp:6
+b http_handler
+b src/main.cpp:540
+b main.cpp:540
+b CThreadPool::AddTask
+b CThread.cpp:68
+b main.cpp:501
+rb 可以使用正则
+
+info b 查看断点情况
+
+r 黄诚辉
+r --config /home/zhaigy/local/coreseek/test/csft_mysql.conf --index mysql
+c	继续运行直到断点
+n	下一行
+s   进入函数内部
+finish 退出函数
+
+p	打印变量
+p pWord->m_iWordID
+
+watch iDeltaWord	监视变量
+watch iWordID
+
+set iWordID=99	程序运行时改变内存中变量值
+
+bt 查看函数堆栈
+
+thread apply 3 1 continue
+
+q 退出
+====================================================================================================
+strace -p 25138	查看对系统的调用
+====================================================================================================
+gdb -c corefile exefile
+bt
+#0  bufferevent_setcb (bufev=0x65646e693f686372, readcb=0, writecb=0x2b59da6365c0 <evhttp_write_cb>, 
+    eventcb=0x2b59da63c000 <evhttp_error_cb>, cbarg=0x2aaabc00a130) at bufferevent.c:345
+345             BEV_LOCK(bufev);
+(gdb) bt
+#0  bufferevent_setcb (bufev=0x65646e693f686372, readcb=0, writecb=0x2b59da6365c0 <evhttp_write_cb>, 
+    eventcb=0x2b59da63c000 <evhttp_error_cb>, cbarg=0x2aaabc00a130) at bufferevent.c:345
+#1  0x000000000041151f in CSearchTask::Run (this=0x2aaabc02e960) at src/main.cpp:541
+#2  0x000000000043119b in CThreadPool::ThreadFunc (p_thread_pool=0x19603620) at libthreadpool/CThread.cpp:81
+#3  0x00000035ed2064a7 in start_thread () from /lib64/libpthread.so.0
+#4  0x00000035ec6d3c2d in clone () from /lib64/libc.so.6
+Current language:  auto; currently c
+====================================================================================================
+
+http_handler
+deal_search_handler
+parserQuery
+CWorkTask2::Run
+
+read_callback
+
+
+
+sphinx_query
+net_get_response
+
+
+
+

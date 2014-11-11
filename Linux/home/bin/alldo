@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+if [ $# -le 0 ]; then
+  echo "Usage: alldo command..."
+  exit 1
+fi
+
+DIR=$(cd $(dirname "$0"); pwd)
+
+. $DIR/config.sh
+
+for node in $NODES ; do
+  echo
+  echo "$node runing [$@]"
+  echo "-----------------------------------------------"
+  one_do $node "$@"
+  echo "-----------------------------------------------"
+  echo
+done
+

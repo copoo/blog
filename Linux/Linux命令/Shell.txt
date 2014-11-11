@@ -1,0 +1,908 @@
+#   shell
+
+    man bash
+
+[安装linux的中文man手册](http://www.cnblogs.com/chengmo/archive/2010/10/27/1862553.html)
+
+<http://www.minunix.com/2013/03/linux-16-commond/>
+<http://linux.cn/article-3646-1.html>
+
+##  Linux命令行光标移动技巧
+
+    Ctrl+a	跳到本行的行首
+    Ctrl+e	则跳到页尾
+    Ctrl+f	光标向前移动一个字符,相当与->
+    Ctrl+b	光标向后移动一个字符,相当与<-
+    Esc,b	移动到当前单词的开头
+    Esc,f	移动到当前单词的结尾
+    
+    Ctrl+r	历史命令列表中查找，如果有多个，可以ctrl+r继续向上搜索
+    Ctrl+p	显示上一条命令
+    Ctrl+n	显示下一条命令
+    
+    Ctrl+j	执行
+    !!		执行上一条命令
+    
+    Ctrl+l	清屏操作
+    
+    Ctrl+s	挂起当前shell
+    Ctrl+q	启用挂起的shell
+    
+    Ctrl+d	删除光标所在处字符
+    Ctrl+c	删除整行
+    Ctrl+h	删除光标所在处前一个字符
+    Ctrl+u	删除当前光标前面的所有字符
+    ctrl+k	删除当前光标后面的所有字符
+    Ctrl+w	删除光标所在处之前的一个词(以空格、标点等为分隔符)
+    
+    Ctrl+y	粘贴刚才所删除的字符
+    Ctrl+xu	按住Ctrl的同时再先后按x和u，撤销刚才的操作
+
+##  定制shell提示符
+
+    PS1='\u@\h:\w \@> '
+    export PS1 
+
+## 
+
+help    shell内建命令帮助
+
+http://space.itpub.net/23524877/viewspace-630614
+
+在运行进程时
+
+    ctrl-c 发送 SIGINT 信号给前台进程组中的所有进程。常用于终止正在运行的程序。
+    ctrl-z 发送 SIGTSTP 信号给前台进程组中的所有进程，常用于挂起一个进程。
+    ctrl-d 不是发送信号，而是表示一个特殊的二进制值，表示 EOF。----在进行
+    ctrl-\ 发送 SIGQUIT 信号给前台进程组中的所有进程，终止前台进程并生成 core 文件。
+
+##  变量
+
+    name=value
+    ${name=value}
+    ${name:-value}
+    ..
+    
+    shell间接变量的输出用 eval echo \$$var
+
+
+##  语句
+
+    if 判断语句 
+    then
+        执行语句
+    fi
+
+    for (( i=10;i<1000;i++))
+    do
+    	执行语句
+    done
+
+    for f in `ls word_count_data_small`; do
+      echo $f;  
+    done
+    
+    for i in {1..5}; do
+      wait %$i
+      echo $?
+    done
+
+
+双括号”(())”结构语句
+
+	((a=a+1));
+	((a+1,b++,c++));	可以多个
+	$((a>1?8:9))		可以表述逻辑，前面的$把内部值赋给外部变量
+	((b!="a"))&& echo "err2";
+
+##  测试语句	[判定]
+
+命令test或[可以测试一个条件是否成立，
+如果测试结果为真，则该命令的Exit Status为0，如果测试结果为假，则命令的Exit Status为1
+
+
+    整数
+    -eq 等于,如:if [ "$a" -eq "$b" ]
+    -ne 不等于,如:if [ "$a" -ne "$b" ]
+    -gt 大于,如:if [ "$a" -gt "$b" ]
+    -ge 大于等于,如:if [ "$a" -ge "$b" ]
+    -lt 小于,如:if [ "$a" -lt "$b" ]
+    -le 小于等于,如:if [ "$a" -le "$b" ]
+    
+    如下比较只用于字符
+    < 小于(需要双括号),如:(("$a" < "$b"))
+    <= 小于等于(需要双括号),如:(("$a" <= "$b"))
+    > 大于(需要双括号),如:(("$a" > "$b"))
+    >= 大于等于(需要双括号),如:(("$a" >= "$b"))
+
+##  字符串
+
+	=	等于,如:if [ "$a" = "$b" ]
+	==	等于,如:if [ "$a" == "$b" ],与=等价
+	!=	不等于,如:if [ "$a" != "$b" ]
+
+这个操作符将在[[]]结构中使用模式匹配.
+
+	<	小于,在ASCII 字母顺序下.如:
+	if [[ "$a" < "$b" ]]
+	if [ "$a" \< "$b" ]
+	注意:在[]结构中"<"需要被转义.
+	> 大于,在ASCII 字母顺序下.如:
+	if [[ "$a" > "$b" ]]
+	if [ "$a" \> "$b" ]
+	注意:在[]结构中">"需要被转义.
+	-z	字符串为"null".就是长度为0.
+	-n	字符串不为"null"
+
+	=~ 可以进行正则匹配判断，例如:
+		hadoop_version_re="^([[:digit:]]+)\.([[:digit:]]+)(\.([[:digit:]]+))?.*$"
+		if [[ "$HADOOP_VERSION" =~ $hadoop_version_re ]]; then
+			hadoop_major_ver=${BASH_REMATCH[1]}
+			hadoop_minor_ver=${BASH_REMATCH[2]}
+			hadoop_patch_ver=${BASH_REMATCH[4]}
+		fi
+		
+		if [[ "$line" =~ ^used ]]; then #以used开头
+			echo $line
+			echo $line | sed -e "s/.*(\(.*\)).*/\1/"
+		fi
+		
+        [[ $pid_port =~ ${pid}=.* ]]  # 注意，不需要引号
+
+	字符串切割
+	IFS=', ' read -a array <<< "$string"
+	array=(${string//:/ })
+
+    if (( ("$data_type" == "pre_rawlog") && ("$curr" >= "$last_1day") )) || \
+       (( ("$data_type" == "rawlog") )) || \       
+       (( ("$data_type" == "user_task_data") )) \
+       ; then
+    fi
+
+比较复杂的字符串操作 http://www.cnblogs.com/chengmo/archive/2010/10/02/1841355.html
+
+    ${var}			变量var的值, 与$var相同
+    ${var-DEFAULT}	如果var没有被声明, 那么就以$DEFAULT作为其值 *
+    ${var:-DEFAULT}	如果var没有被声明, 或者其值为空, 那么就以$DEFAULT作为其值 *
+    ${var=DEFAULT}	如果var没有被声明, 那么就以$DEFAULT作为其值 *
+    ${var:=DEFAULT}	如果var没有被声明, 或者其值为空, 那么就以$DEFAULT作为其值 *
+    ${var+OTHER}	如果var声明了, 那么其值就是$OTHER, 否则就为null字符串
+    ${var:+OTHER}	如果var被设置了, 那么其值就是$OTHER, 否则就为null字符串
+    ${var?ERR_MSG}	如果var没被声明, 那么就打印$ERR_MSG *
+    ${var:?ERR_MSG}	如果var没被设置, 那么就打印$ERR_MSG *
+    ${!varprefix*}	匹配之前所有以varprefix开头进行声明的变量
+    ${!varprefix@}	匹配之前所有以varprefix开头进行声明的变量
+    
+    ${#string}							$string的长度
+    ${string:position}					在$string中, 从位置$position开始提取子串
+    ${string:position:length}			在$string中, 从位置$position开始提取长度为$length的子串
+    	字符串切片操作，位置基于0
+    ${string#substring}					从变量$string的开头, 删除最短匹配$substring的子串	${test#*/}
+    ${string##substring}				从变量$string的开头, 删除最长匹配$substring的子串	${test##*/}
+    ${string%substring}					从变量$string的结尾, 删除最短匹配$substring的子串	${test%/*}   
+        路径删除最后的/	${str%/}
+    ${string%%substring}				从变量$string的结尾, 删除最长匹配$substring的子串	${test%%/*}
+    ${string/substring/replacement}		使用$replacement, 来代替第一个匹配的$substring
+    ${string//substring/replacement}	使用$replacement, 代替所有匹配的$substring
+    ${string/#substring/replacement}	如果$string的前缀匹配$substring, 那么就用$replacement来代替匹配到的$substring
+    ${string/%substring/replacement}	如果$string的后缀匹配$substring, 那么就用$replacement来代替匹配到的$substring
+    
+    substring 可以是一个正则表达式
+
+    ${string##substring}
+    ${string%%substring}
+    ${${string## }%% } = trim
+    
+    删除前导空格
+    output="${output##*( )}"
+ 
+    删除后缀空格
+    output="${output%%*( )}
+    echo "=${output}="
+
+    [[ $pid_port =~ ${pid}=.* ]]
+
+##  文件
+
+    -e	文件存在
+    -f	file是一个 regular 文件(不是目录或者设备文件)
+    -s	文件长度不为0
+    -d	文件是个目录
+    -b	文件是个块设备(软盘,cdrom等等)
+    -c	文件是个字符设备(键盘,modem,声卡等等)
+    -p	文件是个管道
+    -h	文件是个符号链接
+    -L	文件是个符号链接
+    -S	文件是个socket
+    -t	关联到一个终端设备的文件描述符。这个选项一般都用来检测是否在一个给定脚本中的stdin[-t0]或[-t1]是一个终端
+    -r	文件具有读权限
+    -w	文件具有写权限
+    -x	文件具有执行权限
+    -g	set-group-id(sgid)标志到文件或目录上
+            如果一个目录具有sgid标志,那么一个被创建在这个目录里的文件,这个目录属于创建
+            这个目录的用户组,并不一定与创建这个文件的用户的组相同.对于workgroup的目录
+            共享来说,这非常有用.见<<UNIX环境高级编程中文版>>第58页.
+    -u	set-user-id(suid)标志到文件上
+            如果运行一个具有root权限的文件,那么运行进程将取得root权限,即使你是一个普通
+            用户.[1]这对于需要存取系统硬件的执行操作(比如pppd和cdrecord)非常有用.如果
+            没有suid标志的话,那么普通用户(没有root权限)将无法运行这种程序.
+            见<<UNIX环境高级编程中文版>>第58页.
+               -rwsr-xr-t    1 root       178236 Oct  2  2000 /usr/sbin/pppd
+            对于设置了suid的文件,在它的权限标志中有"s".
+    -k	设置粘贴位,见<<UNIX环境高级编程中文版>>第65页.
+            对于"sticky bit",save-text-mode标志是一个文件权限的特殊类型.如果设置了这
+            个标志,那么这个文件将被保存在交换区,为了达到快速存取的目的.如果设置在目录
+            中,它将限制写权限.对于设置了sticky bit位的文件或目录,权限标志中有"t".
+               drwxrwxrwt    7 root         1024 May 19 21:26 tmp/
+            如果一个用户并不时具有stick bit位的目录的拥有者,但是具有写权限,那么用户只
+            能在这个目录下删除自己所拥有的文件.这将防止用户在一个公开的目录中不慎覆盖
+            或者删除别人的文件,比如/tmp(当然root或者是目录的所有者可以随便删除或重命名
+        其中的文件).
+
+    -O	你是文件的所有者.
+    -G	文件的group-id和你的相同.
+    -N	从文件最后被阅读到现在,是否被修改.
+     
+    f1 -nt f2	文件f1比f2新
+    f1 -ot f2	f1比f2老
+    f1 -ef f2	f1和f2都硬连接到同一个文件.
+
+
+    -a 逻辑与
+    -o 逻辑或
+    或者使用 && ||
+    not 逻辑否	test ! -s empty
+
+另外，! 是一个特殊字符，用来引用之前的命令，例如：!rm ，所以，这是错误的: echor "a!" 应该是：echo "a\!"
+
+##  算术计算
+
+    z=$(($z+3))
+    result=`expr ${result} * $x`
+    result=`echo "scale=4;56/32"|bc`
+    let "t1 = ((a = 5 + 3, b = 7 - 1, c = 15 - 4))" 
+    echo "1024*1024*1024*5"|bc	科学计算
+    echo $[256*1024*1024]	#这样也行
+    i=$[i+1]
+
+
+##  变量
+
+    命令，显示所有shell本地变量
+    set 
+    
+    脚本中声明本地变量
+    local
+    
+    取消变量
+    unset
+    
+    只读变量
+    name="abc"; readonly name
+    
+    检查变量是否设置
+    
+    
+    http://www.cnblogs.com/chengmo/archive/2010/10/02/1841355.html 比较详细
+    ${variable:-value}
+    ${variable:=value}
+    ${variable:+value}
+    ${variable:?value}
+    ${variable:%value}
+    
+    $# 传递到脚本的参数个数
+    $* 以一个单字符串显示所有向脚本传递的参数。与位置变量不同，此选项参数可超过9个
+    $$ 脚本运行的当前进程ID号
+    $! 后台运行的最后一个进程的进程ID号
+    $@ 与$*相同，但是使用时加引号，并在引号中返回每个参数。（没有测试出来，少用这个吧）
+    $- 显示shell使用的当前选项，与set命令功能相同
+    $? 显示最后命令的退出状态。0表示没有错误，其他任何值表明有错误。
+    %1
+
+    #!/bin/sh
+    (echo aaa >> /dev/null;sleep 10; exit 0)&
+    (echo bbb >> /dev/null;sleep 11; exit 1)&
+    (echo ccc >> /dev/null;sleep 12; exit 0)&
+    (echo ddd >> /dev/null;sleep 5; exit 0)&
+    (echo eee >> /dev/null;sleep 4; exit 1)&
+    
+    for i in {1..5}; do
+      wait %$i
+      echo $?
+    done
+
+    要非常注意变量的生命周期，特别调用调用函数，和有管道、转输入输出时，
+    如下 $(( comand ))
+    `command`
+    这些调用都会进入子shell，
+    会引起变量的
+
+    # split 
+    IN="bla@some.com;john@home.com"
+    IFS=';' read -ra ADDR <<< "$IN"
+    for i in "${ADDR[@]}"; do
+        # process "$i"
+    done
+
+## 数组
+
+声明数组
+
+    A=(a b c)
+    A[0] = a
+    数组下标没有限制，也不必连续
+    数组的数组
+
+
+    A=   #清空变量
+    unset A
+
+    引用数组 ${A[*]}
+    引用数组元素 ${A[0]}
+    获取数组长度${#A[*]}	${#A[@]}
+    获取数组元素长度${#A[3]}
+
+    for a in ${A[*]}	#也可以"${A[@]}"
+    do
+    done
+
+添加
+
+    ARRAY+=('foo')
+    arr1[111]=10
+    arr1=("$arr1" 9)
+    arr1=(${arr1[@]:0:1} 50 ${arr1[@]:1})  
+
+循环列出数组元素
+
+    lenArrSource=${#arrSource}
+    i=0
+    while [ $i -lt $lenArrSource ]
+    do
+    	echo ${arrSource[$i]}
+    	let i++
+    done
+
+	遍历数组元素	
+	for element in "${array[@]}"
+	do
+		echo "$element"
+	done
+	
+	获取索引和元素，注意数组的index是不连续的
+	for index in "${!array[@]}"
+	do
+		echo "$index ${array[index]}"
+	done
+	
+	获取最后一个元素
+	${array[@]:-1:1}
+	
+	
+切片
+
+    $ echo ${arr[@]:1:2}	// 切片方式获取一部分数组内容，参数1：基于0的起始索引，参数2：长度
+    $ echo ${arr[@]:2}		// 从第二个元素开始  
+    $ echo ${arr[@]::2} 	// 到第二个元素 
+    ${数组名[@或*]:起始位置:长度} 切片原先数组，返回是字符串，中间用“空格”分开，因此如果加上”()”，将得到切片数组。
+    http://www.cnblogs.com/chengmo/archive/2010/09/30/1839632.html
+    a=(1 2 3 4 5)	这是数组
+    echo ${a[@]:0:3}	这个返回的就是字符串了
+    c=(${a[@]:1:4})		这个是把字符串转换为数组
+
+
+替换
+    
+    ${a[@]/3/100}		${数组名[@或*]/查找字符/替换字符} 该操作不会改变原先数组内容 ，返回新的数组
+    把字符串分割为数组：
+    a="one,two,three,four"
+    要将$a分割开，可以这样：
+    OLD_IFS="$IFS" 
+    IFS="," 
+    arr=($a) 
+    IFS="$OLD_IFS" 
+    for s in ${arr[@]} 
+    do 
+        echo "$s" 
+    done
+
+删除元素
+
+	unset array[1]
+
+    seq [OPTION]... LAST
+    seq [OPTION]... FIRST LAST
+    seq [OPTION]... FIRST INCREMENT LAST
+    seq 1000   ‘起始默认是 1，间隔默认也是1
+    seq 2 1000  ‘间隔默认是1
+    seq 1 3 10    '从1开始，到10 间隔为3 结果是：1 4 7 10
+    它生成的是字符串！
+    默认间隔是“空格” 如果想换成其它的可以带参数：-s
+    seq -s'#' 1 3 10
+    可以这样转换为数组：a=($(seq  1 3 10))
+    可以这样生成连续相同的字符串：seq -s '#' 30 | sed -e 's/[0-9]*//g'
+
+
+通配符
+
+	*
+	?
+	[list]					匹配 list 中的任意单一字符
+	[!list]					匹配 除list 中的任意单一字符
+	[c1-c2]					匹配 c1-c2 中的任意单一字符 如：[0-9] [a-z]
+	{string1,string2,...}	匹配 sring1 或 string2 (或更多)其一字符串
+	
+元字符	Meta
+
+	IFS	由 <space> 或 <tab> 或 <enter> 三者之一组成(我们常用 space )。
+	CR	由 <enter> 产生。
+	=	设定变量。
+	$	作变量或运算替换(请不要与 shell prompt 搞混了)。
+	>	重导向 stdout。 *
+	<	重导向 stdin。 *
+	|	命令管线。 *
+	&	重导向 file descriptor ，或将命令置于背境执行。 *
+	( )	将其内的命令置于 nested subshell 执行，或用于运算或命令替换。 *
+	{ }	将其内的命令置于 non-named function 中执行，或用在变量替换的界定范围。
+	;	在前一个命令结束时，而忽略其返回值，继续执行下一个命令。 *
+	&&	在前一个命令结束时，若返回值为 true，继续执行下一个命令。 *
+	||	在前一个命令结束时，若返回值为 false，继续执行下一个命令。 *
+	!	执行 history 列表中的命令。*
+	
+
+函数
+
+	[ function ] funname [()]
+	{
+		action;
+		[return int;]	参数返回，可以显示加：return 返回，如果不加，将以最后一条命令运行结果，作为返回值。
+	}
+	必须在调用函数地方之前，声明函数，shell脚本是逐行运行。不会像其它语言一样先预编译。
+	total=$(fSum 3 2);  通过这种调用方法，会把函数中向标准输出的东西赋值给外部变量
+	可以在函数中定义：local 变量=值 ，这时变量就是内部变量，它的修改，不会影响函数外部相同变量的值
+	函数的本质是命名语句块；不同声明方式可能稍有不同，以()方式声明的，对同名函数命令和别名会有影响
+
+##  文件
+
+管道
+
+    cat /sites/linuxpig.com.txt |while read LINE
+    do
+    	echo $LINE
+    done
+
+重定向
+
+    while read LINE
+    do
+    	echo $LINE
+    done < /sites/linuxpig.com.txt
+
+按行读数据到数组
+
+    n=0;
+    while read a; do 
+    	array[$n]=$a;
+    	((n++));
+    done<ip.txt
+
+输入输出
+
+    &[n] 代表是已经存在的文件描述符，&1 代表输出 &2代表错误输出 &-代表关闭与它绑定的描述符
+    cat>catfile <<eof
+    
+    #cat 从test.sh 获得输入数据，然后输出给文件catfile
+    #<< 这个连续两个小符号， 他代表的是『结束的输入字符』的意思。这样当空行输入eof字符，输入自动结束，不用ctrl+D
+
+    #脚本中获取标准输入
+    # ls -l  |  ./myscript.sh 
+    while read inputline
+    do
+      echo input  = $inputline 
+    done 
+    1.  标准输入   (stdin) ：代码为 0 ，使用 < 或 << ； /dev/stdin -> /proc/self/fd/0   0代表：/dev/stdin 
+    2.  标准输出   (stdout)：代码为 1 ，使用 > 或 >> ； /dev/stdout -> /proc/self/fd/1  1代表：/dev/stdout
+    3.  标准错误输出(stderr)：代码为 2 ，使用 2> 或 2>> ； /dev/stderr -> /proc/self/fd/2 2代表：/dev/stderr
+    exec绑定重定向，exec 6>&1，把6转向标准输出
+    exec 3<>test.sh;	#打开test.sh可读写操作，与文件描述符3绑定
+    exec 3>&-
+    exec 3<&-
+    #关闭文件的，输入，输出绑定
+
+
+Linux shell 脚本实现tcp/upd协议通讯（重定向应用）
+
+	/dev/[tcp|upd]/host/port 只要读取或者写入这个文件，相当于系统会尝试连接:host 这台机器，对应port端口。
+	如果主机以及端口存在，就建立一个socket 连接。将在，/proc/self/fd目录下面，有对应的文件出现。
+	exec 8<>/dev/tcp/127.0.0.1/22
+	ls -l /proc/self/fd/
+	lrwx------ 1 chengmo chengmo 64 10-21 23:05 8 -> socket:[15067661]	可以看到这个特殊的文件
+	
+	(echo -e "HEAD / HTTP/1.1\n\n\n\n\n";sleep 2)|telnet www.baidu.com 80
+	echo的信息打印给telnet，然后sleep，此时管道仍然连接，所以可以返回数据，没有sleep的话，无法显示内容。
+	
+随机数
+
+	$RANDOM		是一个小于或等于5位的整数 最大99999
+	
+	date +%s%N	%N是纳秒级时间
+	
+	随机数设备
+		/dev/random设备，存储着系统当前运行的环境的实时数据，二进制数据保存
+		/dev/urandom这个设备数据与random里面一样。只是，它是非阻塞的随机数发生器，读取操作不会产生阻塞。
+		可以这样吧2进制数据转成文本：head -200 /dev/urandom | cksum	计算校验和
+		head -200 /dev/urandom | cksum | cut -f1 -d" "
+	
+	利用uuid做随机数：
+		linux的uuid码也是有内核提供的，在/proc/sys/kernel/random/uuid这个文件内
+	
+特殊设备
+
+	/dev/stdin				指的就是键盘设备
+	/dev/stdout
+	/dev/stderr
+	/dev/null
+	/dev/zero				提供无限的空字符(NULL, ASCII NUL, 0x00)
+	/dev/full				总是在向其写入时返回设备无剩余空间（错误码为ENOSPC），读取时则与/dev/zero相似
+	/dev/random,urandom
+	/dev/fd					记录用户打开的文件描述符
+	/dev/tcp|upd
+	/dev/loop				在类UNIX操作系统中，Loop设备 可以把loop 文件，作为块设备挂载使用 ？？？
+
+##  调试 debug
+
+    sh -n scriptname 不会实际运行脚本,而只是检查脚本的语法错误
+    sh -v scriptname 在实际执行一个命令前打印出这个命令
+    sh -x scriptname 打印每个命令的执行结果
+
+##  set 命令
+
+    - 设置 +取消
+    
+    -a 自动向已经修改的变量或为导出后序命令的变量作出标志
+    -b 不是在原提示符之前,而是立即引发终止后台任务的状态表表
+    -e 如果命令带非零值返回,立即退出
+    -f 禁止带扩展名的路径
+    -h 定义函数时,定位和存储函数命令,当函数被执行时,通常查询函数命令
+    -k 所有的关键词参数,而不只是那些命令名前的关键词参数,被放在环境命令中
+    -m 监视器模式,启动任务控制.此选项默认支持系统shell交互.后台进程以单独的进程组运行,在每次完成任务时显示包含退出的状态行
+    -n 读取命令但不执行命令.通常监查shell脚本的句法错误.交互shell被忽略
+    -p 打开特权模式(在此模式,$ENV文件被处理,不能从环境中继承shell函数.如果是有效用户ID而不是实用户组则自动启动.关闭此选项将使得有效用户和组IDs设置实用户和组IDs)
+    -t 在读取命令并执行之后退出
+    -u 当执行参数括展时,把非设置变量作为错误处理(如果扩展企图出现在非设置变量中,shell显示错误信息.如果不是交互式,则带非凌值退出)
+    -v 输入行被读取时,显示shell输入行
+    -x 在每个简单命令被扩展之后,显示PS4扩展值,之后是要执行的命令
+    -l 保存和恢复绑定在命令中的名称
+    -d 禁止执行查找散列命令(通常,命令被保存在散列表中,一旦被找到就不再继续查找)
+    -C 效果好像是执行了noclobber=shell命令
+    -H 使用!风格的历史替代(当shell交互时,在默认情况下,此选项有效)
+    -P 如果设置此参数,当执行改变目录命令cd时,不遵循符号链接,而是使用实际的目录
+
+
+
+##  其它
+
+    捕捉信号
+    trap 当收到一个信号时指定一个处理动作，由"trap"指定的命令不会被马上执行,只有当发送了一个适应的信号时才会执行
+    trap 'echo "Control-C disabled."' 2 #当按 Control-C (信号 2) 时显示一行信息
+
+##  输入参数
+
+    $@	全部命令行参数（用户参数，不包含$0）
+    $#	输入参数的个数（用户参数，不包含$0）
+    $0	脚本名称
+    $1	第1个参数
+    $2	第2个参数
+    ${variable: -value} 变量替换，注意负号
+    shift
+
+##  函数
+
+    function functname() 
+    { 
+        shell commands 
+    } 
+    或者
+    functname() 
+    { 
+        shell commands 
+    } 
+    函数同样可以接受参数,$1存放第一个参数,$2存放第二个参数,$*存放输入参数的列表
+    函数返回值只能是数字，表示是否执行成功
+    要输出字符串值，可以输出返回值，在函数调用处为变量赋值
+    aaa=`functname`
+    返回 使用 return
+
+	Code highlighting produced by Actipro CodeHighlighter (freeware)http://www.CodeHighlighter.com/-->#test.sh
+	#!/bin/bash
+	while getopts "a:bc" arg #选项后面的冒号表示该选项需要参数
+	do
+			case $arg in
+				 a)
+					echo "a's arg:$OPTARG" #参数存在$OPTARG中
+					;;
+				 b)
+					echo "b"
+					;;
+				 c)
+					echo "c"
+					;;
+				 ?)  #当有不认识的选项的时候arg为?
+				echo "unkonw argument"
+			exit 1
+			;;
+			esac
+	done
+
+##  其它命令
+
+    help
+    shift	弹出一个程序参数变量，$1 $2 $3 之类的	变量$1的值在shift命令执行后就不可用了
+    cd -	回到刚才的目录
+    hostname	
+    		修改/etc/sysconfig/network
+    		改完后运行/etc/rc.d/rc.sysinit
+    		或者：临时性修改
+    date	日期
+    		date -d @1374584344		把秒数转换为标准时间
+            date -d "2012-04-10 +1 day " +%Y-%m-%d
+    lsb_release -a	查看系统发现版本
+
+##  技巧
+
+脚本的当前目录
+
+    $(cd "$(dirname "$0")"; pwd)
+    $(dirname $_)
+
+判定系统是32位还是64位
+
+    IF_IS_X86="if \[ \`uname -m | sed -e 's/i.86/32/'\` == '32' \]"
+
+随机数
+
+    echo $RANDOM 生成的是整数随机数 范围为: 0 - 32767 (带符号的16位整数)
+
+输出多行
+
+    echo << EOF
+    *****************
+    * something
+    *****************
+    EOF
+
+屏蔽输出
+
+    >/dev/null 2>&1
+    (sh test_search.sh >/dev/null 2>&1) &
+
+三元运算 三目运算
+
+    cmd1 && cmd2 || cmd3	等同于	if cmd1 then cmd2 else cmd3
+
+一步安装无密码SSH登录
+
+    ssh-keygen; ssh-copy-id user@host; ssh user@host
+
+
+时间同步
+
+    后面的ip是国家授时中心的
+    0 0 * * * /usr/sbin/ntpdate 210.72.145.44
+    uc内部的	ntp.ucweb.com
+    0 0 * * * /usr/sbin/ntpdate ntp.ucweb.com && /sbin/hwclock -w
+
+时间同步 时间服务器
+
+    /usr/sbin/ntpdate clock.redhat.com && /sbin/hwclock -w
+    /usr/sbin/ntpdate ntp.sjtu.edu.cn
+
+免密码登陆
+
+    ssh-keygen -t rsa
+    
+    mkdir -p ~/.ssh;
+    echo "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAvvVjvMyDTsfmdfuOERTF0DgPHuT4zNcyc5Sq2UTqboJI60pS58ToC0JO7UGbUFCVB7GTJpNvSbqTzq+ludZTMP7RozDq1YxodOLuTCXkkIfeO93UuccXnqCPXlhTn8akkjsgh7ZSX62Y3qOWxFuAMvOAk67Wbp9JxYwqaq348rRmz9WHzrYdbwLkYGtKHSXpPkHI1FQ1BaWyo2U6TC5CShzrlZOLyp92BURCvuTOleXG2cElWFdt5Drfaq1poBdm7zuUZrh/Rc0buAA7tNiuLu0pFo++G0csnV7sP9C9oMAYqBfbF0s3CNfDJQJs0isbhxwCu8e9tH17VQlrl/B3iQ== nemo@cnode507.uc.local" >> ~/.ssh/authorized_keys;
+    chmod 755 ~/.ssh;
+    chmod 600 ~/.ssh/authorized_keys;
+    
+    cat $HOME/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+
+其它命令
+
+    dd	
+    od	od [-abcdfhilovx][-A <字码基数>][-j <字符数目>][-N <字符数目>][-s <字符串字符数>][-t <输出格式>][-w <每列字符数>][--help][--version][文件...]
+    	od -A n -t x4
+    iftop	查看网络流量
+    hdparm -Tt /dev/sda
+    smartctl --all /dev/sda
+    tr A-Z a-z
+    alias "have_this=true"
+    	alias格式:alias name text
+    	在text中要得到用户传递的参数可以使用以下方式
+    	/!:1    表示第1个参数
+    	/!:2*  表示第2个及余下的所有参数
+    	/!*      表示所有参数
+    	如:alias test_val '@ z = (/!*) ;echo $z'
+    	test_var  1 + 1
+    	得到2
+    unalias have_this
+    fuser	可以关闭指定端口对应的进程，可以看打开文件的进程
+    nc		网络工具，可以封住指定端口，可以阅读端口信息
+    exec
+    查看当前登录用户所在的组 groups
+    
+    grep
+    	-v 取反，显示不匹配项
+    	
+    
+    
+    lsof -iUDP@www.akadia.com:123
+    lsof -i:50010
+
+##  使用技巧
+    
+    ZOO_DATADIR=$(grep "^[[:space:]]*dataDir" "$ZOOCFG" | sed -e 's/.*=//')
+    exec "$bin/slaves.sh" --config $HADOOP_CONF_DIR cd "$HADOOP_PREFIX" \; "$bin/hadoop-daemon.sh" --config $HADOOP_CONF_DIR "$@" #通过ssh执行多个命令
+    slaves.sh cd /home/ztest/zookeeper/bin \;. ~/.bash_profile\; ./zkCleanup.sh -n 3\;
+    nohup nice -n $HADOOP_NICENESS $hdfsScript --config $HADOOP_CONF_DIR $command "$@" > "$log" 2>&1 < /dev/null &
+    ssh zgy@platform31 "ls /home;echo -------------------;ls /home"
+    cat /proc/cpuinfo	很全的cpu信息，可以查看物理cpu，每个物理cpu的core，可能能开了超线程
+    cat /proc/cpuinfo | grep flags | grep ' lm ' | wc -l	结果大于0, 说明支持64bit计算. lm指long mode, 支持lm则是64bit
+    args=${@// /\\ }	#啥意思？把 $@中的空格替换为\\空格
+    find . -size 0c -exec rm {} \;
+    find . -empty -exec rm {} \;
+    ${file#*/}：拿掉第一条 / 及其左边的字符串：dir1/dir2/dir3/my.file.txt
+    shopt -s/-u expand_aliases
+    tr -s "\n" " " < test.txt;
+    sed -i “s/old/new/g” `grep old -rl ./`
+    find ./ -name "robots.txt" -exec rm -rf {} \;
+    find ./ -name "*.apk" -exec rm -rf {} \;
+    find ./ -type d -empty -exec rm -rf {} \;
+
+在同一行中打印
+
+    i=0
+    echo -e -n "$i"
+    sleep 1
+    
+    for((i=1;i<100;i++))
+    do
+        echo -e -n "\r$i"
+        sleep 1
+    done
+
+##  linux简要命令
+
+常用命令
+
+	cd	[-L|-P] [dir]
+	tr						转换：tr -s "\n" " " < test.txt;
+	paste					文本行合并：paste -d" " -s - < test.txt
+	pr						格式化打印
+	xargs					分隔参数
+	exec					
+	eval
+	curl
+	wget					http://baike.baidu.com/view/1312507.htm
+	dmesg					开机信息,dmesg用于检测和控制内核环缓冲。程序用来帮助用户了解系统的启动信息。
+		
+内核相关
+
+	lsmod		列出内核已载入模块的状态
+	depmod		分析可加载模块的依赖性，生成modules.dep文件和映射文件
+	modprobe	可智能地添加和删除Linux内核模块
+	modinfo		显示内核模块的信息
+	insmod		向Linux内核中插入一个模块
+	rmmod		删除内核中的一模块
+	ldconfig	
+	ldd			依赖分析
+
+
+##  在同一行中打印
+
+    i=0
+    echo -e -n "$i"
+    sleep 1
+    
+    for((i=1;i<100;i++))
+    do
+        echo -e -n "\r$i"
+        sleep 1
+    done
+
+linux简要命令
+
+常用命令
+
+	cd	[-L|-P] [dir]
+	tr						转换：tr -s "\n" " " < test.txt;
+	paste					文本行合并：paste -d" " -s - < test.txt
+	pr						格式化打印
+	xargs					分隔参数
+	exec					
+	eval
+	curl
+	wget					http://baike.baidu.com/view/1312507.htm
+	dmesg					开机信息,dmesg用于检测和控制内核环缓冲。程序用来帮助用户了解系统的启动信息。
+		
+内核相关
+
+	lsmod		列出内核已载入模块的状态
+	depmod		分析可加载模块的依赖性，生成modules.dep文件和映射文件
+	modprobe	可智能地添加和删除Linux内核模块
+	modinfo		显示内核模块的信息
+	insmod		向Linux内核中插入一个模块
+	rmmod		删除内核中的一模块
+	ldconfig	
+	ldd			依赖分析
+    getconf     getconf ARG_MAX
+	
+读写
+
+	flock
+
+信号量		kill -l
+
+    [pagediff@platform30 ~]$ kill -l
+     1) SIGHUP	 2) SIGINT	 3) SIGQUIT	 4) SIGILL	 5) SIGTRAP
+     6) SIGABRT	 7) SIGBUS	 8) SIGFPE	 9) SIGKILL	10) SIGUSR1
+    11) SIGSEGV	12) SIGUSR2	13) SIGPIPE	14) SIGALRM	15) SIGTERM
+    16) SIGSTKFLT	17) SIGCHLD	18) SIGCONT	19) SIGSTOP	20) SIGTSTP
+    21) SIGTTIN	22) SIGTTOU	23) SIGURG	24) SIGXCPU	25) SIGXFSZ
+    26) SIGVTALRM	27) SIGPROF	28) SIGWINCH	29) SIGIO	30) SIGPWR
+    31) SIGSYS	34) SIGRTMIN	35) SIGRTMIN+1	36) SIGRTMIN+2	37) SIGRTMIN+3
+    38) SIGRTMIN+4	39) SIGRTMIN+5	40) SIGRTMIN+6	41) SIGRTMIN+7	42) SIGRTMIN+8
+    43) SIGRTMIN+9	44) SIGRTMIN+10	45) SIGRTMIN+11	46) SIGRTMIN+12	47) SIGRTMIN+13
+    48) SIGRTMIN+14	49) SIGRTMIN+15	50) SIGRTMAX-14	51) SIGRTMAX-13	52) SIGRTMAX-12
+    53) SIGRTMAX-11	54) SIGRTMAX-10	55) SIGRTMAX-9	56) SIGRTMAX-8	57) SIGRTMAX-7
+    58) SIGRTMAX-6	59) SIGRTMAX-5	60) SIGRTMAX-4	61) SIGRTMAX-3	62) SIGRTMAX-2
+    63) SIGRTMAX-1	64) SIGRTMAX	
+
+    INT			中断信号，编号为2,当用户输入Ctrl+C时由终端驱动程序发送INT信号
+    TERM		软件终止信号,编号为15,请求彻底终止某项操作的信号，它期望进程清楚自己的状态并退出
+    QUIT		退出信号，编号为3,与TERM类似，不同之处在于QUIT信号的默认处理是内存转储，而TERM信号的默认处理没有内存转储。
+    BUS与SEGV	二者都是错误信号，BUS表示总线错误，SEGV表示段错误，程序崩溃的时候99%都是这两个错误导致的。进程可以捕获和封锁这两类错误。内核对二者的默认处理是memory dump
+    KILL		杀死/删除进程，编号为9
+    STOP		挂起/暂停正在执行的进程，直到收到CONT为止
+    CONT 		取消挂起，继续执行进程
+    KILL STOP都不能够被捕获、封锁或者忽略，默认处理都不会产生内存转储。
+    HUP 		挂起信号，编号为1，有两种解释：守护进程理解HUP为重新设置的请求，有时有终端驱动程序生成，试图用来清除（也就是终止）跟某个特定终端相连接的那些进程。
+
+进程的四种状态
+
+    runnable（可运行状态）只要有CPU时间，进程就可以执行。一旦进程执行了不能立即完成的系统调用，Linux会把进程转入睡眠状态
+    sleeping（睡眠状态）进程在等待某些事件发生（如终端输入、网络连接）
+    zombie（僵化状态）进程已经执行完毕并试图消亡，但是状态没有收集完
+    stopped（停止状态）进程被挂起，不允许执行。进程收到STOP或者TSTP信号即进入停止状态，可以用CONT信号来重新启动
+
+tcpdump 
+
+    sudo tcpdump -s 0 -A port 50003 -i any
+    tcpdump -A -s 0 'tcp port 8088' -i lo
+    tcpdump -A -s 0 -v 'dst 115.28.165.103'
+    tcpdump -A -vv 'tcp port 80 and host 115.28.165.103' -i eth1 -w abc.txt
+    
+    -X 以可读方式显示数据包，适合http、memcached asccii等明文传输的协议
+    -x 输出16进制的包内容，Print each packet (minus its link level header) in hex
+    -A ascii码显示（孙永跃提供）
+    -i	网卡
+    -i lo 看本机localhost的通信包（杨伟提供）
+    -n 不要域名解析，Don’t convert host addresses to names.  This can be used to avoid DNS lookups.
+    -s 设置抓完整的包，Snarf  snaplen  bytes  of data from each packet rather than the default of 68...Setting snaplen to 0 means use the required length to catch whole packets.
+    
+    
+    CLOSE_WAIT
+
+
+    sysctl -w net.ipv4.tcp_keepalive_time=30
+    sysctl -w net.ipv4.tcp_keepalive_probes=2
+    sysctl -w net.ipv4.tcp_keepalive_intvl=2
+    
+    vi /etc/sysctl.conf
+    
+    sysctl -p
+    或者
+    /etc/rc.d/init.d/network restart
+
+    echo abc | sudo tee -a /abc >/dev/null

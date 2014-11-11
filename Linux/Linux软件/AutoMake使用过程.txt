@@ -1,0 +1,415 @@
+AutoMake使用过程
+
+第一步：
+----------
+main.cpp,其内容如下：
+------------------------------------------------
+  1 #include <stdlib.h>
+  2 #include <stdio.h>
+  3 #include <time.h>
+  4 #include <err.h>
+  5 #include <event.h>
+  6 #include <evhttp.h>
+  7 
+  8 void now_handler(struct evhttp_request *req, void *arg)
+  9 {
+ 10     struct evbuffer *buf;
+ 11     buf = evbuffer_new();
+ 12     if (buf == NULL)
+ 13         err(1, "failed to create response buffer");
+ 14     evbuffer_add_printf(buf, "zlj");
+ 15     evhttp_send_reply(req, HTTP_OK, "OK", buf);
+ 16 }
+ 17 
+ 18 int main(int argc, char **argv)
+ 19 {
+ 20     struct evhttp *httpd;
+ 21     event_init();
+ 22     httpd = evhttp_start("0.0.0.0", 6006);
+ 23     if ( httpd == NULL )
+ 24     {
+ 25         fprintf(stderr, "Start server error: %m\n");
+ 26         exit(1);
+ 27     }
+ 28     /* Set a callback for requests to "/specific". */
+ 29     /* evhttp_set_cb(httpd, "/specific", another_handler, NULL); */
+ 30     /* Set a callback for all other requests. */
+ 31     evhttp_set_gencb(httpd, now_handler, NULL);
+ 32     event_dispatch();
+ 33     /* Not reached in this code as it is now. */
+ 34     evhttp_free(httpd);
+ 35     return 0;
+ 36 }
+------------------------------------------------
+
+
+第二步：
+----------
+运行 autoscan , 自动创建两个文件： autoscan.log  configure.scan
+
+第三步：
+----------
+修改configure.scan的文件名为configure.ac
+
+------------------------------------------------
+
+修改动作:
+    1.修改AC_INIT里面的参数: AC_INIT(main,1.0, pgpxc@163.com)
+    2.添加宏AM_INIT_AUTOMAKE, 它是automake所必备的宏，也同前面一样，PACKAGE是所要产生软件套件的名称，VERSION是版本编号。
+    3.在AC_OUTPUT后添加输出文件Makefile
+
+
+修改后的结果:
+------------------------------------------------
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ(2.59)
+AC_INIT([sphinx_http_proxy], [1.0], [zhaigy@ucweb.com])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AC_CONFIG_SRCDIR([main.cpp])
+AC_CONFIG_HEADER([config.h])
+
+default_find_path=$HOME/local
+
+AC_ARG_WITH([libevent], [AS_HELP_STRING([--with-libevent=DIR],[Where to find libevent])],, [withval=$default_find_path])
+if test "$withval" != "no" ; then
+    AC_MSG_CHECKING([for libevent installation])
+    for dir in "." $withval/include ; do
+        if test -f "$dir/event.h" ; then
+            CXXFLAGS="$CXXFLAGS -I$dir"
+            ev_include="ok"
+        fi
+    done
+    for dir in "." $withval/lib ; do
+        if test -f "$dir/libevent_core.a" ; then
+            EVENT_LIBS="$dir/libevent.a"
+            ev_core="ok"
+        fi
+        if test -f "$dir/libevent_extra.a" ; then
+            EVENT_LIBS="$EVENT_LIBS $dir/libevent_extra.a"
+            ev_extra="ok"
+        fi
+    done
+    if test "$ev_include" == "ok" -a "$ev_core" == "ok"  -a "$ev_extra" == "ok" ; then
+        AC_MSG_RESULT([yes])
+    else
+        AC_MSG_RESULT([no])
+        AC_MSG_ERROR([libevent not found])
+    fi
+fi
+AC_SUBST(EVENT_LIBS)
+
+# Checks for programs.
+AC_PROG_CC
+AC_PROG_CXX
+
+# Checks for libraries.
+# FIXME: Replace `main' with a function in `-lmysqlclient_r':
+#AC_CHECK_LIB([mysqlclient_r], [main])
+
+# FIXME: Replace `main' with a function in `-lpthread':
+#AC_CHECK_LIB([pthread], [main])
+
+# FIXME: Replace `main' with a function in `-lrt':
+AC_CHECK_LIB([rt], [main])
+
+#AC_CHECK_LIB([event], [main])
+#AC_CHECK_LIB([libevent], [main])
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([stdlib.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+
+# Checks for library functions.
+
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT
+
+使用libtool方式安装的，需要添加配置。更具体的配置示例，请看后面附录。
+------------------------------------------------
+
+第四步:
+生成m4目录（mkdir m4），此目录中存放自定义的m4的宏文件
+这里现在还不需要它，是空目录
+运行 aclocal -I m4, 生成一个“aclocal.m4”文件和一个缓冲文件夹autom4te.cache，该文件主要处理本地的宏定义。
+
+------------------------------------------------
+第五步：
+运行 autoconf, 目的是生成 configure 
+
+------------------------------------------------
+
+第六步：
+运行 autoheader，它负责生成config.h.in文件。该工具通常会从“acconfig.h”文件中复制用户附加的符号定义，因此此处没有附加符号定义，所以不需要创建“acconfig.h”文件。
+
+------------------------------------------------
+
+第七步：
+下面即将运行 automake, 但在此之前应该做一下准备工作!
+
+如果使用libtool，需要特别的定义
+automake --add-missing
+
+
+首先
+创建一个 Makefile.am.这一步是创建Makefile很重要的一步，automake要用的脚本配置文件是Makefile.am，用户需要自己创建相应的文件。之后，automake工具转换成Makefile.in。
+
+这个Makefile.am的内容如下：
+------------------------------------------------
+ACLOCAL_AMFLAGS = -I m4
+AUTOMAKE_OPTIONS = foreign
+#SUBDIRS = source client
+bin_PROGRAMS=sphinx_http_proxy
+sphinx_http_proxy_SOURCES=main.cpp
+#sphinx_http_proxy_CXXFLAGS = -I$(top_srcdir) -D__STDC_FORMAT_MACROS -D$(DB_TYPE)
+sphinx_http_proxy_LDADD = $(EVENT_LIBS)
+#EXTRA_DIST = main.h mqtcxdb.h mqstore.h utility.h
+------------------------------------------------
+
+下面对该脚本文件的对应项进行解释。
+    其中的AUTOMAKE_OPTIONS为设置automake的选项。由于GNU（在第1章中已经有所介绍）对自己发布的软件有严格的规范，比如必须附带许可证声明文件COPYING等，否则automake执行时会报错。automake提供了三种软件等级：foreign、gnu和gnits，让用户选择采用，默认等级为gnu。在本例使用foreign等级，它只检测必须的文件。
+    bin_PROGRAMS定义要产生的执行文件名。如果要产生多个执行文件，每个文件名用空格隔开。
+    main_SOURCES定义“main”这个执行程序所需要的原始文件。如果”main”这个程序是由多个原始文件所产生的，则必须把它所用到的所有原始文件都列出来，并用空格隔开。例如：若目标体“main”需要“main.c”、“sunq.c”、“main.h”三个依赖文件，则定义main_SOURCES=main.c sunq.c main.h。要注意的是，如果要定义多个执行文件，则对每个执行程序都要定义相应的file_SOURCES。
+
+其次
+使用automake对其生成“configure.in”文件，在这里使用选项“—adding-missing”可以让automake自动添加有一些必需的脚本文件。
+
+------------------------------------------------
+
+第八步
+运行configure，在这一步中，通过运行自动配置设置文件configure，把Makefile.in变成了最终的Makefile。
+
+------------------------------------------------
+
+第九步
+运行 make，对配置文件Makefile进行测试一下
+
+
+异常：couldn't open directory `m4'
+创建一个空目录：mkdir m4
+或者移除Makefile.am中的ACLOCAL_AMFLAGS = -I m4
+
+------------------------------------------------
+
+第十步
+运行生成的文件 sphinx_http_proxy：
+
+------------------------------------------------
+第十一步，需要另开一个secureCRT,测试
+
+ab -n 10000 -c 10 localhost:6006/
+------------------------------------------------
+
+
+------------------------------------------------
+简单的 autogen.sh
+#!/bin/sh
+if [ -x "`which autoreconf 2>/dev/null`" ] ; then
+   exec autoreconf -ivf
+fi
+
+LIBTOOLIZE=libtoolize
+aclocal -I m4 && \
+        autoheader && \
+        $LIBTOOLIZE && \
+        autoconf && \
+        automake --add-missing --force-missing --copy
+------------------------------------------------
+
+
+
+
+附：
+------------------------------------------------
+libtool configure.ac
+
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ(2.59)
+AC_INIT([sphinx_http_proxy], [1.0.0], [zhaigy@ucweb.local])
+AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+
+AC_CONFIG_SRCDIR([src/main.cpp])
+AC_CONFIG_HEADER([src/config.h])
+
+default_find_path=$HOME/local
+default_find_path=$HOME/local/libevent
+
+AC_ARG_WITH([libevent], [AS_HELP_STRING([--with-libevent=DIR],[Where to find libevent])],, [withval=$default_find_path])
+if test "$withval" != "no" ; then
+    AC_MSG_CHECKING([for libevent installation]) 
+    for dir in "." $withval/include ; do 
+        if test -f "$dir/event.h" ; then 
+            CFLAGS="$CFLAGS -I$dir" 
+            ev_include="ok"
+        fi
+    done
+    for dir in "." $withval/lib ; do 
+        if test -f "$dir/libevent_core.a" ; then 
+            EVENT_LIBS="$dir/libevent.a"
+            ev_core="ok"
+        fi
+        if test -f "$dir/libevent_extra.a" ; then 
+            EVENT_LIBS="$EVENT_LIBS $dir/libevent_extra.a"
+            ev_extra="ok"
+        fi
+    done
+    if test "$ev_include" == "ok" -a "$ev_core" == "ok"  -a "$ev_extra" == "ok" ; then 
+        AC_MSG_RESULT([yes]) 
+    else 
+        AC_MSG_RESULT([no]) 
+        AC_MSG_ERROR([libevent not found]) 
+    fi 
+fi
+AC_SUBST(EVENT_LIBS)
+
+# if test "$LIBEVENT_EXIST" == "yes" ; then 
+#     AC_CHECK_HEADER([event.h], , AC_MSG_ERROR([event.h not found])) 
+#     AC_CHECK_HEADER([evhttp.h], , AC_MSG_ERROR([evhttp.h not found])) 
+#     AC_CHECK_LIB(event_core, event_init, LIBEVENT_LIBS="-levent_core", AC_MSG_ERROR(libevent not found)) 
+#     AC_CHECK_LIB(event_extra, evhttp_new, LIBEVENT_LIBS="$LIBEVENT_LIBS -levent_extra", AC_MSG_ERROR(libevent not found)) 
+# fi
+
+# AC_SUBST(LIBEVENT_LIBS)
+
+#zhaigy
+#AX_CHECK_COMPILER_FLAGS(["-pipe"], [CFLAGS="$CFLAGS -pipe"]) 
+
+#zhaigy
+#AC_ARG_WITH(gcc-arch, [AS_HELP_STRING([--with-gcc-arch=<arch>], [use architecture <arch> for gcc -march/-mtune, instead of guessing])], gcc_arch_list=$withval, gcc_arch_list=sys)
+#if test "$gcc_arch_list" = "sys" ; then
+#    AC_CANONICAL_HOST
+#    case $host_cpu in
+#        x86_64*) gcc_arch_list="native corei7 core2 nocona pentium4 pentiumpro" ;;
+#        *) gcc_arch_list="native prescott pentium4 pentium-m pentium3 pentium2 pentiumpro" ;;
+#    esac
+#fi
+#for arch in $gcc_arch_list; do
+#    AX_CHECK_COMPILER_FLAGS(["-march=$arch"], [CFLAGS="$CFLAGS -march=$arch"; break]) 
+#done
+
+AC_ARG_ENABLE(debug, [AC_HELP_STRING([--enable-debug], [compile for debugging])], [CFLAGS="$CFLAGS -g -O0"], [CFLAGS="$CFLAGS -O2 -minline-all-stringops -fomit-frame-pointer"])
+
+AC_ARG_ENABLE(hash, [AC_HELP_STRING([--enable-hash], [use hash as database. default is B+ tree.])], [CFLAGS="$CFLAGS -D_MQ_USE_TC_HASH_"], [CFLAGS="$CFLAGS -D_MQ_USE_TC_B_TREE_"])
+
+AC_ARG_ENABLE(info-cache, [AC_HELP_STRING([--enable-info-cache], [use queue info cache])], [CFLAGS="$CFLAGS -D_MQ_USE_QUEUE_CACHE_"], [])
+
+# store current user givern compiler flags to avoid default setup via AC_PROG_CXX
+OLD_CXXFLAGS=$CXXFLAGS
+OLD_CFLAGS=$CFLAGS
+
+# Checks for programs.
+AC_PROG_CXX
+AC_PROG_AWK
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_LIBTOOL
+
+# reset compiler flagsto initial flags
+CXXFLAGS=$OLD_CXXFLAGS
+CFLAGS=$OLD_CFLAGS
+
+MIN_VERSION=4.1.2
+AC_MSG_CHECKING([$CC version])
+CC_VER=`$CC -dumpversion`
+is_ok=`echo $MIN_VERSION.$CC_VER | awk 'BEGIN{FS="."}{print(($4>$1)||(($4==$1)&&(($5>$2)||(($5==$2)&&($6>=$3))))) ? "OK" : "FAILED";}'`
+if test "$is_ok" = "OK"; then
+	AC_MSG_RESULT([$CC_VER]) 
+else
+	AC_MSG_RESULT([$CC_VER]) 
+	AC_MSG_ERROR([ !!! we need $CC version up to $MIN_VERSION !!! ]) 
+fi
+
+AC_MSG_CHECKING([$CXX version])
+CXX_VER=`$CXX -dumpversion`
+is_ok=`echo $MIN_VERSION.$CC_VER | awk 'BEGIN{FS="."}{print(($4>$1)||(($4==$1)&&(($5>$2)||(($5==$2)&&($6>=$3))))) ? "OK" : "FAILED";}'`
+if test "$is_ok" = "OK"; then
+	AC_MSG_RESULT([$CXX_VER]) 
+else
+	AC_MSG_RESULT([$CXX_VER]) 
+	AC_MSG_ERROR([ !!! we need $CXX version up to $MIN_VERSION !!! ]) 
+fi
+
+AC_ARG_ENABLE(gcov, [AC_HELP_STRING([--enable-gcov], [compile for gcov])], enable_gcov=$enableval, enable_gcov=no)
+if test "$enable_gcov" = "yes"; then
+	if test "$enable_debug" = "yes"; then
+		CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage"
+	else
+		AC_MSG_ERROR([ !!! debug must be enabled when try to enable gconv !!! ]) 
+	fi
+fi
+
+#zhaigy
+#gcc_arg_list="-pipe -Wall -Wparentheses -Winline -Wuninitialized -Wunused -Wcomment -Wformat -Wimplicit -Wsequence-point -Wfloat-equal -Wshadow -fstack-protector-all "
+#for arg in $gcc_arg_list; do
+#    AX_CHECK_COMPILER_FLAGS(["$arg"], [CFLAGS="$CFLAGS $arg"]) 
+#done
+
+CFLAGS="$CFLAGS -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
+
+CXXFLAGS="$CFLAGS -D__STDC_FORMAT_MACROS -D__STDC_CONSTANT_MACROS "
+CFLAGS="$CFLAGS --std=c99"
+
+# Checks for libraries.
+# FIXME: Replace `main' with a function in `-lbz2':
+AC_CHECK_LIB([bz2], [main])
+# FIXME: Replace `main' with a function in `-ldl':
+AC_CHECK_LIB([dl], [main])
+# FIXME: Replace `main' with a function in `-lm':
+AC_CHECK_LIB([m], [main])
+# FIXME: Replace `main' with a function in `-lnsl':
+AC_CHECK_LIB([nsl], [main])
+# FIXME: Replace `main' with a function in `-lresolv':
+AC_CHECK_LIB([resolv], [main])
+# FIXME: Replace `main' with a function in `-lrt':
+AC_CHECK_LIB([rt], [main])
+# FIXME: Replace `main' with a function in `-lz':
+AC_CHECK_LIB([z], [main])
+# # FIXME: Replace `main' with a function in `-lstdc++':
+# AC_CHECK_LIB([stdc++], [main])
+
+# Checks for header files.
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h inttypes.h netdb.h netinet/in.h stdint.h stdlib.h string.h strings.h sys/socket.h sys/time.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_HEADER_STDBOOL
+AC_C_CONST
+AC_C_INLINE
+AC_TYPE_SIZE_T
+AC_HEADER_TIME
+AC_STRUCT_TM
+AC_C_VOLATILE
+
+# Checks for library functions.
+AC_FUNC_FORK
+AC_FUNC_MALLOC
+AC_TYPE_SIGNAL
+AC_FUNC_STAT
+AC_FUNC_WAIT3
+AC_CHECK_FUNCS([clock_gettime gethostbyname gettimeofday inet_ntoa localtime_r memset mkdir socket strcasecmp strchr strcspn strncasecmp strstr])
+
+AC_CONFIG_FILES([Makefile
+                 src/Makefile
+                 json/Makefile
+                 log/Makefile
+                 libthreadpool/Makefile
+                 libsphinxclient/Makefile
+                 libhttp/Makefile])
+AC_OUTPUT
+------------------------------------------------
+
+
+
+
+
+
+

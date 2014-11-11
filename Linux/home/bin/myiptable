@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# Written by zhenghh@ucweb.com
+# Anyone want to modify this script, please contact ZhengHaihong.
+
+if [ "$USER" != "root" ]; then
+    echo "Please use sudo or switch to root!"
+    exit 1
+fi
+
+iptables -F
+iptables -t nat -F
+
+#iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+iptables -t nat -A POSTROUTING -o ppp0 -j MASQUERADE
+
+# show me
+iptables -L -n -t nat
+
+# ssh
+myip=`hostname -i`
+iptables -t nat -A PREROUTING -d $myip  -p tcp --dport 22 -j DNAT --to $myip:9922
+
+# save
+service iptables save
+
+# cat sysconfig
+cat /etc/sysconfig/iptables

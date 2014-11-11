@@ -1,0 +1,23 @@
+linux下为已经编译好的php环境添加mysql扩展
+	(注：编译时用到mysql运行库，需要提前安装)
+	
+添加扩展的基本步骤：
+1、进入php源代码目录：# cd /usr/ChenShao/php-5.3.1/
+2、再进入要添加的mysql扩展源码目录：# cd ext/mysql/
+2、调用已经编译好的php里面的phpize：# /usr/local/php5/bin/phpize
+3、然后configure：# ./configure --with-php-config=/usr/local/php5/bin/php-config --with-mysql=/usr/local/mysql
+    （/usr/local/mysql 为mysql的安装目录）
+4、make && make install
+5、编译之后，自动把mysql.so放到了默认的php扩展目录下（phpinfo可查看，我的为 /usr/local/php5/lib/php/extensions/no-debug-zts-20090626），再修改php.ini，去掉;extension=php_mysql.so前面的分号。
+    不过有一点需要注意的是，生成的模块名叫mysql.so，跟php.ini里面的php_mysql.so名字不一致，必须把mysql.so改名为php_mysql.so，切记切记~！
+6、重启apache：# service httpd restart
+
+特别注意：如果第3步通过了，但第4步报错，很有可能是源代码的问题，我是从php.net新下载了一份之后，再来编译才通过的。
+
+	(注：这是典型的php扩展的安装方式,其它扩展也可以类似安装)
+	
+	
+PHP 语言
+
+
+数组：

@@ -1,0 +1,163 @@
+# tmux
+
+    linux多终端管理软件
+
+*所有的tmux操作都需要先按下`ctrl-b`，再跟其他的命令。*
+
+**配置文件在~/.tmux.conf中，或/etc/tmux.conf中**
+
+## 基本用法
+
+0.  ? 帮助
+
+1.  启动：tmux
+
+2.  新终端panel:
+
+        "   将当前的pane分割成上下的两个pane
+        %   将当前的pane分割成左右两个pane
+
+3.  关闭终端pannel：
+
+        x   kill当前的pane
+        正常的退出终端：exit
+
+4.  焦点移动
+
+        方向键    将光标在上\下\左\右的pane间移动
+
+5.  pannel移动：
+
+        Ctrl-o      顺时针旋转pane的位置
+        Ctrl-Shift-o    逆时针旋转pane的位置
+
+6.  调整pannel大小
+
+        Ctrl-上\下\左\右    调整当前pane的size，一个单位一个单位的调整
+        Ctrl-Shift-上\下\左\右    调整当前pane的size，五个单位五个单位的调整
+
+7.  连接已有session
+
+        tmux ls # 列出
+        tmux attach -t 0 # 0 是session编号，也可以是名称
+
+8.  复制粘贴
+
+        Ctrl+b [        空格标记复制开始，回车结束复制。
+        Ctrl+b ]        粘贴最后一个缓冲区内容
+        Ctrl+b =        列出缓冲区目标
+
+9.  退出但不关闭
+    
+        d
+    
+10. 预定义场景
+
+        
+
+## 快捷键
+
+!   将当前的pane从当前的window中移出到一个新的window中
+x   kill当前的pane
+&  kill当前的window
+"   将当前的pane分割成上下的两个pane
+% 将当前的pane分割成左右两个pane
+q   显示pane的序号
+{   将当前的pane与前一个pane交换位置，光标仍在当前的pane上
+}   将当前的pane与后一个pane交换位置，光标仍在当前的pane上
+
+
+
+创建session
+tmux
+创建并指定session名字
+tmux new -s $session_name
+删除session
+Ctrl+b :kill-session
+临时退出session
+Ctrl+b d
+列出session
+tmux ls
+进入已存在的session
+tmux a -t $session_name
+删除所有session
+Ctrl+b :kill-server
+删除指定session
+tmux kill-session -t $session_name
+—-
+window在session里，可以有N个window，并且window可以在不同的session里移动
+创建window
+Ctrl+b +c
+删除window
+Ctrl+b &
+下一个window
+Ctrl+b n
+上一个window
+Ctrl+b p
+重命名window
+Ctrl+b ,
+在多个window里搜索关键字
+Ctrl+b f
+在相邻的两个window里切换
+Ctrl+b l
+—-
+pane在window里，可以有N个pane，并且pane可以在不同的window里移动、合并、拆分
+创建pane
+横切split pane horizontal
+Ctrl+b ” (问号的上面，shift+’)
+竖切split pane vertical
+Ctrl+b % （shift+5）
+按顺序在pane之间移动
+Ctrl+b o
+上下左右选择pane
+Ctrl+b 方向键上下左右
+调整pane的大小
+Ctrl+b :resize-pane -U #向上
+Ctrl+b :resize-pane -D #向下
+Ctrl+b :resize-pane -L #向左
+Ctrl+b :resize-pane -R #向右
+在上下左右的调整里，最后的参数可以加数字 用以控制移动的大小，例如：
+Ctrl+b :resize-pane -D 50
+在同一个window里左右移动pane
+Ctrl+b { （往左边，往上面）
+Ctrl+b } （往右边，往下面）
+删除pane
+Ctrl+b x
+更换pane排版
+Ctrl+b “空格”
+移动pane至window
+Ctrl+b !
+移动pane合并至某个window
+Ctrl+b :join-pane -t $window_name
+显示pane编号
+Ctrl+b q
+按顺序移动pane位置
+Ctrl+b Ctrl+o
+—-
+其他：
+复制模式
+Ctrl+b [
+空格标记复制开始，回车结束复制。
+粘贴最后一个缓冲区内容
+Ctrl+b ]
+选择性粘贴缓冲区
+Ctrl+b =
+列出缓冲区目标
+Ctrl+b :list-buffer
+查看缓冲区内容
+Ctrl+b :show-buffer
+vi模式
+Ctrl+b :set mode-keys vi
+显示时间
+Ctrl+b t
+快捷键帮助
+Ctrl+b ? (Ctrl+b :list-keys)
+tmux内置命令帮助
+Ctrl+b :list-commands
+
+
+## 文档
+
+[tmux入门指南](http://abyssly.com/2013/11/04/tmux_intro/)
+
+[终端环境之tmux](http://foocoder.com/blog/zhong-duan-huan-jing-zhi-tmux.html/)

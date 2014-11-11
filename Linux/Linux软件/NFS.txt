@@ -1,0 +1,133 @@
+NFS
+
+如何解决 NFS 目录访问被挂住的问题
+http://hi.baidu.com/d_life/item/1248fc73cf744b14d0dcb39c
+超全的NFS文档
+http://linux.sheup.com/linux/linux3475.htm
+鳥哥的 Linux 私房菜
+http://linux.vbird.org/linux_server/0330nfs.php
+
+安装
+一般都随系统安装
+
+服务器端启动
+/etc/init.d/nfs start
+/etc/init.d/nfs stop
+/etc/init.d/nfs restart
+service portmap status	#portmap必须先启动
+service portmap start
+在一些系统中变成了rpcbind，用法相同
+service nfslock start|stop|status	#需要在nfs client机器启动，如果需要nfs目录上的锁服务的话
+service nfs status
+service nfs start|stop|restart
+service nfs reload
+exportfs -ar	修改export文件后
+showmount -e 10.16.139.76	显示mount本机的数量
+
+
+
+服务器端配置
+
+新增nfs服务
+
+服务器端：
+NFS服务的配置文件是etc/exports
+/home/ztest/hadoop_edit_1   platform31(rw,sync,no_wdelay,all_squash,anonuid=553,anongid=553)
+/home/ztest/hadoop_edit_1   platform31(rw,sync,no_wdelay,all_squash,anonuid=553,anongid=553)
+/home/hadoop/hadoop_nfs 10.20.0.0/16(rw,no_root_squash,async)
+
+/home/zhaigy/hadoop_nfs 192.168.0.0/16(rw,no_root_squash,async,anonuid=505,anongid=505)
+/home/zhaigy/hadoop_nfs 192.168.0.0/16(rw,sync,no_wdelay,all_squash,anonuid=505,anongid=505)
+
+
+客户端挂载：
+mount -t nfs -o soft,intr,timeo=1,retrans=1 platform30:/home/ztest/hadoop_edit_1 /home/ztest/hadoop_edit_1
+mount -t nfs -o rw,noatime,soft,tcp,rsize=16384,wsize=16384,nfsvers=3 platform31:/home/zhaigy/hadoop_nfs /home/zhaigy/hadoop_nfs 
+mount -t nfs -o soft,timeo=7,retrans=3,tcp,rsize=16384,wsize=16384,nfsvers=3 platform31:/home/zhaigy/hadoop_nfs /home/zhaigy/hadoop_nfs 
+mount -t nfs -o rw,noatime,soft,timeo=7,retrans=3,tcp,rsize=16384,wsize=16384,nfsvers=3 platform31:/home/zhaigy/hadoop_nfs /home/zhaigy/hadoop_nfs
+mount -t nfs -o rw,noatime,soft,timeo=7,retrans=3,retry=1,intr,tcp,rsize=16384,wsize=16384,nfsvers=3 platform31:/home/zhaigy/hadoop_nfs /home/zhaigy/hadoop_nfs
+mount -t nfs -o soft,intr,timeo=1,retrans=1 hadoop5:/home/zhaigy1/share /home/zhaigy1/share
+
+mount -t nfs -o rw,tcp,soft,rsize=8192,wsize=8192,timeo=10,intr,retry=1 platform31:/home/zhaigy/hadoop_nfs /home/zhaigy/hadoop_nfs
+上面的这个居然是3分钟？
+mount -t nfs -o soft,timeo=10,intr,retrans=1,retry=1 platform31:/home/zhaigy/hadoop_nfs /home/zhaigy/hadoop_nfs
+6s?
+mount -t nfs -o tcp,soft,timeo=10,retrans=1,retry=1,intr platform31:/home/zhaigy/hadoop_nfs /home/zhaigy/hadoop_nfs
+3s?
+mount -t nfs -o soft,timeo=10,retrans=3,retry=1,intr platform31:/home/zhaigy/hadoop_nfs /home/zhaigy/hadoop_nfs
+9s?12s?23?47s?
+mount -t nfs -o soft,timeo=100,retrans=1,retry=1,intr platform31:/home/zhaigy/hadoop_nfs /home/zhaigy/hadoop_nfs
+20?23,47,60
+mount -t nfs -o soft,timeo=10,retrans=3,retry=1,intr platform31:/home/zhaigy/hadoop_nfs /home/zhaigy/hadoop_nfs
+9s?12?24?48?60
+mount -t nfs -o rw,tcp,soft,timeo=10,retrans=3,retry=1,intr platform31:/home/zhaigy/hadoop_nfs /home/zhaigy/hadoop_nfs
+9s?
+
+sync
+mount -t nfs -o rw,tcp,soft,timeo=10,retrans=3,retry=1,intr platform31:/home/zhaigy/hadoop_nfs /home/zhaigy/hadoop_nfs
+mount -t nfs -o rw,tcp,soft,timeo=30,retrans=4,retry=1,intr cnode508.uc.local:/home/hadoop/hadoop_nfs /home/hadoop/hadoop_nfs
+- 45s ?
+客户端卸载：
+umount /home/zhaigy/hadoop_nfs
+umount /home/hadoop/hadoop_nfs
+
+10.20.193.84:/home/hadoop/hadoop_nfs /home/hadoop/hadoop_nfs nfs rw,noatime,soft,tcp,rsize=16384,wsize=16384,nfsvers=3,addr=10.20.193.84 0 0
+
+
+同步异步
+
+
+需要调整
+soft,timeo=10,retrans=3,retry=1,intr
+
+
+
+major timeout 计算公式: 如果 retry = 1, 则 timeout = timeo + 2 * timeo. 如果retry = 2, 则 timeout = timeo + 2*timeo + 4*timeo. 
+
+从网络断开到系统捕捉到第一次“主超时”的时间为= min(timeo * (2^0+2^1+2^2+2^3+···+2^retrans),600)
+即 = min(2 * timeo * (-0.5+2^retrans),600) 单位：0.1秒
+其中，2^retrans表示2的retrans次方，min(a,b)表示取a,b最小值，
+由此可知，在第二次及其后的“主超时”之间，“主超时”间隔上限为 60 秒
+
+
+2012-07-19 14:11:34,116 INFO org.apache.hadoop.hdfs.StateChange: DIR* NameSystem.completeFile: file /test.ok.zgy.3 is closed by DFSClient_487056339
+
+
+
+2012-07-19 14:12:33,788 ERROR org.apache.hadoop.hdfs.server.namenode.FSNamesystem: Unable to sync /home/zhaigy/hadoop_nfs/dfs/name/current/edits
+java.io.IOException: Input/output error
+	at sun.nio.ch.FileChannelImpl.size0(Native Method)
+	at sun.nio.ch.FileChannelImpl.size(FileChannelImpl.java:299)
+	at org.apache.hadoop.hdfs.server.namenode.FSEditLog$EditLogFileOutputStream.preallocate(FSEditLog.java:261)
+	at org.apache.hadoop.hdfs.server.namenode.FSEditLog$EditLogFileOutputStream.flushAndSync(FSEditLog.java:242)
+	at org.apache.hadoop.hdfs.server.namenode.EditLogOutputStream.flush(EditLogOutputStream.java:89)
+	at org.apache.hadoop.hdfs.server.namenode.FSEditLog.logSync(FSEditLog.java:1124)
+	at org.apache.hadoop.hdfs.server.namenode.FSNamesystem.startFile(FSNamesystem.java:1165)
+	at org.apache.hadoop.hdfs.server.namenode.NameNode.create(NameNode.java:599)
+	at org.apache.hadoop.hdfs.server.namenode.NameNode.create(NameNode.java:578)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+	at java.lang.reflect.Method.invoke(Method.java:597)
+	at org.apache.hadoop.ipc.RPC$Server.call(RPC.java:557)
+	at org.apache.hadoop.ipc.Server$Handler$1.run(Server.java:1434)
+	at org.apache.hadoop.ipc.Server$Handler$1.run(Server.java:1430)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:396)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1177)
+	at org.apache.hadoop.ipc.Server$Handler.run(Server.java:1428)
+
+
+2012-07-19 14:13:45,780 ERROR org.apache.hadoop.hdfs.server.namenode.FSNamesystem: Exception in NameNodeResourceMonitor: 
+java.io.IOException: Expecting a line not the end of stream
+	at org.apache.hadoop.fs.DF.parseExecResult(DF.java:117)
+	at org.apache.hadoop.util.Shell.runCommand(Shell.java:237)
+	at org.apache.hadoop.util.Shell.run(Shell.java:182)
+	at org.apache.hadoop.fs.DF.getFilesystem(DF.java:63)
+	at org.apache.hadoop.hdfs.server.namenode.NameNodeResourceChecker.getVolumesLowOnSpace(NameNodeResourceChecker.java:122)
+	at org.apache.hadoop.hdfs.server.namenode.NameNodeResourceChecker.hasAvailableDiskSpace(NameNodeResourceChecker.java:107)
+	at org.apache.hadoop.hdfs.server.namenode.FSNamesystem.checkAvailableResources(FSNamesystem.java:2692)
+	at org.apache.hadoop.hdfs.server.namenode.FSNamesystem.access$500(FSNamesystem.java:110)
+	at org.apache.hadoop.hdfs.server.namenode.FSNamesystem$NameNodeResourceMonitor.run(FSNamesystem.java:2706)
+	at java.lang.Thread.run(Thread.java:662)
+	

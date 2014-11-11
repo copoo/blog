@@ -1,0 +1,218 @@
+Perl教程
+========
+
+
+安装模块
+	yum install perl-JSON
+	
+
+	变量
+	----
+		正常变量
+			$var	
+
+		特殊变量
+			$_	默认值变量
+			$”
+			$/
+			$2
+			$$
+		数组
+		字符串
+		
+	语法
+	----
+		if () {} else {}
+		while () {}
+		for () {}
+		last	#break
+		next	#continue
+		
+	文件
+	----
+		open
+		close
+	
+	函数
+	----
+		srand()
+		rand(200)
+
+		srand; #要先宣告srand函数，才能产生随机数的效果
+		$int=rand(10); #$int的值会大于0而且小于10如果希望产生的乱数是整数的话，就要再加上int #这个函数
+		$int=int(rand(10)); #$int的值是一个整数，且值在0和9之间
+
+	示例
+	----
+		#print "start"."\n";
+		open(IN,"tmp.f2.nbr.2.txt");
+		chomp(@array = <IN>);
+		close(IN);
+		#print $array[2]."\n";
+		#exit(0);
+		open(IN,"tmp.f1.nbr.2.txt");
+		$n=0;
+		while($line=<IN>){
+		  chomp($line);
+		  #$line='000913-8048652';
+		  #print $line."\n";
+		  $r = &binarySearch(\@array,$line);
+		  #print $r."\n";
+		  if( $r < 0) {
+			print $line."\n";
+			#print "not find:".$line."\n";
+		  }
+		  $n=$n+1;
+		  if($n % 1000 == 0) {
+			#last;
+			#print $n."\n";
+		  }
+		}
+		close(IN);
+
+
+		#二分查找算法
+		sub binarySearch {
+			($list, $query) = @_;
+			($low, $high)   = ($[, $#$list);
+			#print "[$low,$high] $query\n";
+			#return -1;
+			
+			while ( $low <= $high ) {
+				my $try = int( ($low + $high) / 2 );
+				#print "[$low,$high][$try] $list->[$try] vs $query\n";
+
+				# note: "lt" and "gt" because we are comparing strings
+				# if we were comparing numbers then we would use "<" and ">"
+				$list->[$try] lt $query and do { $low  = $try + 1; next };
+				$list->[$try] gt $query and do { $high = $try - 1; next };
+
+				return $try; # By this point it must be equal!
+			}
+			return -$try-1; # not find
+		}
+
+Perl简单教程
+
+====================================================================================================
+宗旨
+
+一件事情可以使用许多方法来完成
+胶水语言
+====================================================================================================
+信息
+
+perldoc	命令，用于获取perl文档，perldoc perl
+perldoc -tf print
+#!/usr/bin/perl
+use strick;
+====================================================================================================
+调试
+perl -d 程序文件	可以进入调试方式运行，每次运行一条语句
+h [cmd]	显示帮助
+n	运行下一条语句
+print 变量	打印变量
+l	列出程序下面10行
+b 行号	设置断点
+d 行号	取消断点
+c	运行直到断点或程序末尾
+q	退出
+====================================================================================================
+语法
+----------------------------------------------
+变量，无明确类型，可变类型
+$
+@
+%
+特殊的标量：$_ $0 $1 $2 @_ $$ $/ $^O 
+----------------------------------------------
+<=>	飞船运算符	> =  <的结合体
+<>	菱形运算符，用于读取文件
+----------------------------------------------
+if () {
+} else {
+}
+
+xxxx if ();
+----------------------------------------------
+while
+for
+last next redo
+last 退出当前正在运行的循环
+exit
+----------------------------------------------
+语句块，标签	MYBLOCK: { }
+----------------------------------------------
+列表 和 数组
+qw
+(5, 'apple', $x. 3.14159)
+( 1 .. 1 0 )
+＠boy=qw(Greg Peter Bobby);
+$boy[0];
+@bogy[1,2];	数组分组
+($a, $b, $c)=qw (apples oranges bananas);
+$#	返回数组中最后一个有效的索引值
+foreach $var (@array) {}
+----------------------------------------------
+正则
+m/ /mgs
+s///mgs
+tr///
+=~
+!~
+----------------------------------------------
+% hash
+keys
+value
+exists
+----------------------------------------------
+sub fun {
+	@_
+	return 
+}
+fun();
+&fun();
+----------------------------------------------
+引用
+&ab=\$ab
+$$ab
+----------------------------------------------
+模块
+----------------------------------------------
+DBM文件
+
+====================================================================================================
+函数
+print
+split
+join
+scalar
+sort	可用语句块
+
+open
+close
+chomp
+
+index
+rindex
+substr
+
+push
+pop
+shift
+unshift
+
+opendir
+closedir
+chdir
+mkdir
+
+unlink
+rename
+chmod
+stat
+
+system
+`ls`
+qx{}
+====================================================================================================

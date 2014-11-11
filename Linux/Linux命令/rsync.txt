@@ -1,0 +1,245 @@
+rsync -vzrogtp --password-file=/home/kpi/.rsyncmfs kpi@stkpi.uc.local::dfs/stat/2004/20120307/tmp/
+returncode=106, stderr=rsync: rename \\"/stat/2004/20120307/tmp/.2004-20120307010000-20120307020000-kpi28-ssp20_1.2kA2ie\\" (in dfs) -> \\"2004-20120307010000-20120307020000-kpi28-ssp20_1\\": Input/output error (5)\\nrsync error: som, pid=6056
+
+
+
+
+Rsync finds files that need to be transferred using a "quick check" algorithm (by default) that looks for files that have changed in size or in last-modified time. Any changes in the other preserved attributes (as requested by options) are made on the destination file directly when the quick check indicates that the file's data does not need to be updated.
+快速检查：文件长度和最后修改时间
+
+rsync [OPTION]... SRC DEST
+rsync [OPTION]... SRC [USER@]HOST:DEST
+rsync [OPTION]... [USER@]HOST:SRC DEST
+rsync [OPTION]... [USER@]HOST::SRC DEST
+rsync [OPTION]... SRC [USER@]HOST::DEST
+rsync [OPTION]... rsync://[USER@]HOST[:PORT]/SRC [DEST]
+
+
+1)拷贝本地文件。当SRC和DES路径信息都不包含有单个冒号":"分隔符时就启动这种工作模式。如：rsync -a /data /backup
+2)使用一个远程shell程序(如rsh、ssh)来实现将本地机器的内容拷贝到远程机器。当DST路径地址包含单个冒号":"分隔符时启动该模式。如：rsync -avz *.c foo:src
+3)使用一个远程shell程序(如rsh、ssh)来实现将远程机器的内容拷贝到本地机器。当SRC地址路径包含单个冒号":"分隔符时启动该模式。如：rsync -avz foo:src/bar /data
+4)从远程rsync服务器中拷贝文件到本地机。当SRC路径信息包含"::"分隔符时启动该模式。如：rsync -av root@172.16.78.192::www /databack
+5)从本地机器拷贝文件到远程rsync服务器中。当DST路径信息包含"::"分隔符时启动该模式。如：rsync -av /databack root@172.16.78.192::www
+6)列远程机的文件列表。这类似于rsync传输，不过只要在命令中省略掉本地机信息即可。如：rsync -v rsync://172.16.78.192/www
+
+
+rsync参数的具体解释如下：
+-v, --verbose 详细模式输出
+-q, --quiet 精简输出模式
+-c, --checksum 打开校验开关，强制对文件传输进行校验
+-a, --archive 归档模式，表示以递归方式传输文件，并保持所有文件属性，等于-rlptgoD
+-r, --recursive 对子目录以递归模式处理
+-R, --relative 使用相对路径信息
+-b, --backup 创建备份，也就是对于目的已经存在有同样的文件名时，将老的文件重新命名为~filename。可以使用--suffix选项来指定不同的备份文件前缀。
+--backup-dir 将备份文件(如~filename)存放在在目录下。
+-suffix=SUFFIX 定义备份文件前缀
+-u, --update 仅仅进行更新，也就是跳过所有已经存在于DST，并且文件时间晚于要备份的文件。(不覆盖更新的文件)
+-d, --dirs    传输目录，不递归
+-l, --links 保留软链结
+-L, --copy-links 想对待常规文件一样处理软链结
+--copy-unsafe-links 仅仅拷贝指向SRC路径目录树以外的链结
+--safe-links 忽略指向SRC路径目录树以外的链结
+-H, --hard-links 保留硬链结     -p, --perms 保持文件权限
+-o, --owner 保持文件属主信息     -g, --group 保持文件属组信息
+-D, --devices 保持设备文件信息    -t, --times 保持文件时间信息
+-S, --sparse 对稀疏文件进行特殊处理以节省DST的空间
+-n, --dry-run现实哪些文件将被传输
+-W, --whole-file 拷贝文件，不进行增量检测
+-x, --one-file-system 不要跨越文件系统边界
+-B, --block-size=SIZE 检验算法使用的块尺寸，默认是700字节
+-e, --rsh=COMMAND 指定使用rsh、ssh方式进行数据同步
+--rsync-path=PATH 指定远程服务器上的rsync命令所在路径信息
+-C, --cvs-exclude 使用和CVS一样的方法自动忽略文件，用来排除那些不希望传输的文件
+--existing 仅仅更新那些已经存在于DST的文件，而不备份那些新创建的文件
+--delete 删除那些DST中有SRC没有的文件
+--delete-excluded 同样删除接收端那些被该选项指定排除的文件
+--delete-after 传输结束以后再删除
+--ignore-errors 及时出现IO错误也进行删除
+--max-delete=NUM 最多删除NUM个文件
+--partial 保留那些因故没有完全传输的文件，以是加快随后的再次传输
+--force 强制删除目录，即使不为空
+--numeric-ids 不将数字的用户和组ID匹配为用户名和组名
+--timeout=TIME IP超时时间，单位为秒
+-I, --ignore-times 不跳过那些有同样的时间和长度的文件
+--size-only 当决定是否要备份文件时，仅仅察看文件大小而不考虑文件时间
+--modify-window=NUM 决定文件是否时间相同时使用的时间戳窗口，默认为0
+-T --temp-dir=DIR 在DIR中创建临时文件
+--compare-dest=DIR 同样比较DIR中的文件来决定是否需要备份
+-P 等同于 --partial
+--progress 显示备份过程
+-z, --compress 对备份的文件在传输时进行压缩处理
+--exclude=PATTERN 指定排除不需要传输的文件模式
+--include=PATTERN 指定不排除而需要传输的文件模式
+--exclude-from=FILE 排除FILE中指定模式的文件
+--include-from=FILE 不排除FILE指定模式匹配的文件
+--version 打印版本信息
+--address 绑定到特定的地址
+--config=FILE 指定其他的配置文件，不使用默认的rsyncd.conf文件
+--port=PORT 指定其他的rsync服务端口
+--blocking-io 对远程shell使用阻塞IO
+-stats 给出某些文件的传输状态
+--progress 在传输时现实传输过程
+--log-format=formAT 指定日志文件格式
+--password-file=FILE 从FILE中得到密码
+--bwlimit=KBPS 限制I/O带宽，KBytes per second      -h, --help 显示帮助信息
+
+
+----------------------------------------------------------------------------------------------------
+安装？
+----------------------------------------------------------------------------------------------------
+rsync测试
+
+#在hdfs上测试测试文件添加，成功。
+touch a.txt
+echo "ok" >> a.txt
+echo "ok" >> a.txt
+#测试在fuse上mv大文件延迟
+for ((i=0;i<100;++i)) do ls;mv 1G.R.BIN 2G.R.BIN;ls;mv 2G.R.BIN 1G.R.BIN;ls; done;
+#没有测到延迟
+#mv测试，正常，fuse和普通磁盘一致
+echo ok >> ~/test/rsync/ok.txt ; mv ~/test/rsync/ok.txt .
+
+touch 在fuse上不能完全支持
+
+1. 同机器mob607，本地磁盘向hdfs磁盘
+dd if=/dev/zero of=1G.R.BIN bs=1024 count=1000000
+#正常完成
+rsync 1G.R.BIN -vrogtp ~/mnt/dfs/user/hadoop/test/rsync/
+#重试不会报错
+rsync 1G.R.BIN -vrogtp ~/mnt/dfs/user/hadoop/test/rsync/
+#删除数据
+rm -rf ~/mnt/dfs/user/hadoop/test/rsync/1G.R.BIN
+
+#中断它
+rsync 1G.R.BIN -vrogtp ~/mnt/dfs/user/hadoop/test/rsync/ --bwlimit=10240
+#查看到有临时文件.1G.R.BIN.9uFZUs
+#重试不会报错，会生成另一个临时文件，做完后改名成功。此时有一个成功文件，一个临时文件。
+rsync 1G.R.BIN -vrogtp ~/mnt/dfs/user/hadoop/test/rsync/
+#传输过程中，两个临时文件，不能续传?
+echo $?  #=0
+
+本地传本地看看是否可以续传
+mkdir bk
+rsync -vrogtp --partial 1G.R.BIN bk/1G.R.BIN --bwlimit=10240
+#仍然不行，虽然改名了
+rsync -vrogtp --partial 1G.R.BIN bk/1G.R.BIN --bwlimit=10240
+
+rsync -zIP --size-only --bwlimit=102400 1G.R.BIN bk/
+
+
+#fuse
+rsync -vrogtp --partial --bwlimit=10240 1G.R.BIN ~/mnt/dfs/user/hadoop/test/rsync/
+rsync -vrogtp --partial --bwlimit=10240 1G.R.BIN ~/mnt/dfs/user/hadoop/test/rsync/
+rsync -zIP --size-only --bwlimit=10240 1G.R.BIN ~/mnt/dfs/user/hadoop/test/rsync/
+
+rsync: rename "/home/hadoop/mnt/dfs/user/hadoop/test/rsync/.1G.R.BIN.SSOUuz" -> "1G.R.BIN": Input/output error (5)
+
+
+2. 不同机器mob616 -> mob607，本地磁盘向它盘fuse
+dd if=/dev/zero of=1G.R.BIN bs=1024 count=1000000
+rsync -e "ssh -p 9922" 1G.R.BIN -vrogtp hadoop@mob607:/home/hadoop/mnt/dfs/user/hadoop/test/rsync/
+#再次传输，不会重传
+rsync -e "ssh -p 9922" 1G.R.BIN -vrogtp hadoop@mob607:/home/hadoop/mnt/dfs/user/hadoop/test/rsync/
+
+rsync -e "ssh -p 9922" --bwlimit=10240 1G.R.BIN -vrogtp hadoop@mob607:/home/hadoop/mnt/dfs/user/hadoop/test/rsync/
+#中断，临时文件.1G.R.BIN.8A1PzH
+#再次传，又一个临时文件，.1G.R.BIN.8A1PzH，为什么不续传？需要服务器支持？
+rsync -e "ssh -p 9922" 1G.R.BIN -vrogtp hadoop@mob607:/home/hadoop/mnt/dfs/user/hadoop/test/rsync/
+#再次传，验证重复
+rsync -e "ssh -p 9922" 1G.R.BIN -vrogtp hadoop@mob607:/home/hadoop/mnt/dfs/user/hadoop/test/rsync/
+
+3. 跨网络的fuse
+mob607配置服务，mob616连接
+#原来目录已经存在文件，大小一样
+#此命令成功，不传送数据
+rsync -vztP --size-only ./1G.R.BIN hadoop@mob607::dfs/
+#此命令成功，不传送数据
+rsync -vrogtp ./1G.R.BIN hadoop@mob607::dfs/
+#在服务器端fuse上修改文件时间
+touch 1G.R.BIN
+#失败，数据重传，文件更名失败
+rsync -vrogtp ./1G.R.BIN hadoop@mob607::dfs/
+#失败，数据重传，文件更名失败
+#以下都是不行得
+rsync -vtP ./1G.R.BIN hadoop@mob607::dfs/
+rsync -vtWP ./1G.R.BIN hadoop@mob607::dfs/
+rsync -vtxWP ./1G.R.BIN hadoop@mob607::dfs/
+rsync -vtxP --force ./1G.R.BIN hadoop@mob607::dfs/1G.R.BIN
+rsync -vtxWP --force ./1G.R.BIN hadoop@mob607::dfs/1G.R.BIN
+
+#成功，普通磁盘，非fuse
+rsync -vtP ./1G.R.BIN hadoop@mob607::fs/
+#成功，数据不重传
+rsync -vtP ./1G.R.BIN hadoop@mob607::fs/
+#在服务器端fuse上修改文件时间
+touch 1G.R.BIN
+#再次传送，传输数据，更名正常
+rsync -vtP ./1G.R.BIN hadoop@mob607::fs/
+
+rsync -vtP --delete ./1G.R.BIN hadoop@mob607::fs/
+
+
+
+删除
+
+rsync --delete-before -a -H -v --progress --stats /tmp/test/ log/
+–delete-before 接收者在传输之前进行删除操作
+–progress 在传输时显示传输过程
+-a 归档模式，表示以递归方式传输文件，并保持所有文件属性
+-H 保持硬连接的文件
+-v 详细输出模式
+–stats 给出某些文件的传输状态
+
+
+------------------------------------
+服务器端配置
+------------------------------------
+/etc/rsyncd.conf
+/etc/rsyncd.secrets
+/etc/rsyncd.motd
+
+chmod 600 /etc/rsyncd.secrets  #将rsyncd.secrets这个密码文件的文件属性设为root拥有, 且权限要设为600, 否则无法备份成功!
+
+配置文件rsyncd.conf内容：
+pid file = /var/run/rsyncd.pid
+port = 873
+address = 0.0.0.0
+#uid = nobody
+#gid = nobody
+uid = root
+gid = root
+use chroot = yes
+read only = no
+#limit access to private LANs
+hosts allow=192.168.1.0/255.255.0.0 10.0.1.0/255.255.0.0
+hosts deny=*
+max connections = 5
+#motd file = /etc/rsyncd.motd
+#This will give you a separate log file
+#log file = /var/log/rsync.log
+#This will log every file transferred – up to 85,000+ per user, per sync
+#transfer logging = yes
+log format = %t %a %m %f %b
+syslog facility = local3
+timeout = 300
+
+[data_hbase]
+path = /home/ztest/hbase_py/hbase_store/data
+list=yes
+ignore errors
+auth users = ztest
+secrets file = /etc/rsyncd.secrets
+#comment = This is RHEL 4 data
+#exclude = easylife/  samba/
+
+
+密码文件：/etc/rsyncd.secrets的内容格式：
+用户名：密码
+ztest:123456
+
+启动
+/usr/bin/rsync --daemon --config=/etc/rsyncd.conf
+测试
+rsync --list-only ztest@192.168.22.30::
+rsync --list-only ztest@192.168.22.30::/data_hbase
+------------------------------------

@@ -1,0 +1,33 @@
+epoll 
+	参考libevent
+
+
+Linux Epoll介绍和程序实例
+http://blog.csdn.net/sparkliang/article/details/4770655
+
+PPC/TPC 模型	让每一个到来的连接一边自己做事去，别再来烦我
+select 模型		最大并发数限制，一个进程所打开的 FD （文件描述符）是有限制的， select 每次调用都会线性扫描全部的 FD 集合
+poll 模型
+Epoll 的提升	没有最大并发连接的限制，只管你“活跃”的连接 ，而跟连接总数无关
+
+
+int epoll_create(int size);
+int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event );
+int epoll_wait(int epfd,struct epoll_event * events,int maxevents,int timeout);
+
+一个简单 Echo Server 的例子程序
+http://54min.com/post/non-blocking-socket-server-using-libevent.html
+
+----------------
+struct sockaddr_in
+socket
+fcntl
+bind
+listen
+accept
+write
+recv
+send
+
+
+----------------

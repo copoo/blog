@@ -1,0 +1,8 @@
+psql -p 7432
+
+创建一个新用户，这个用户没有创建数据库的权限（-D），没有新建用户的权限（-A）。创建用户时会提示你输入密码。
+createuser -p 7432 -D -A -P hive -U cloudera-scm
+
+createdb -p 7432 -O hive hive -U cloudera-scm
+
+dropdb -p 7432 hive -U cloudera-scm

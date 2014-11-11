@@ -1,0 +1,89 @@
+# SVN
+
+    版本库控制，类似CVS Hg Git
+
+*   [官方文档1.4](http://www.subversion.org.cn/svnbook/1.4/index.html)
+*   [官方文档nightly](http://www.subversion.org.cn/svnbook/nightly/index.html)
+
+## 常用操作
+
+*   help
+
+        查看帮助	svn help
+        查子命令	svn help import
+
+*   初始导入
+    
+        svn import path url -m "initial"
+
+*   检出代码
+
+        svn co	url path --user=user --password=password
+
+*   文件操作
+
+        添加文件	svn add
+        构造目录	svn mkdir
+        删除文件	svn del
+        文件改名	svn mv
+
+*   查看状态
+
+        svn st
+
+*   commit
+
+        svn ci -m ""
+
+*   导出代码
+   
+        svn export	导出干净代码
+
+##  高级操作
+
+*   分支
+   
+        svn sw		在不同分支之间转换，
+
+*   版本
+
+		svn cp
+		svn revert		丢弃对本地的修改 Svn revert --depth=infinity .
+		svn resolve		解决工作副本中目录或文件的冲突。
+
+## 概念
+
+### 版本
+
+*   关键字
+
+    	HEAD		版本库中最新版本。
+    	BASE		本地未修改版本。
+    	COMMITTED	项目最近修改的修订版本，与BASE相同或更早。
+    	PREV		一个项目最后修改版本之前的那个版本，技术上可以认为是COMMITTED -1。
+
+分支、标签
+	和主干区分的目录，在svn的定位中，它们只是普通的目录，没有特权
+	分支用于继续开发和主干有区别的代码
+	标签用于快照特定版本的代码，通常它快照内代码不再改变
+	
+属性
+	文件的附带元数据
+	svn propset svn:keywords "Date Author" weather.txt
+
+关键字替换
+	关键字大小写敏感，$Key$
+	Date	文件最后修改日期，$Date: 2006-07-22 21:42:37 -0700 (Sat, 22 Jul 2006) $
+	Rev		文件最后修改版本，$Revision: 144 $	它是Svn管理的文件的修订版本
+	Author	最后修改文件的用户，$Author: harry $。
+	URL		文件在版本库最新版本的完全URL，$HeadURL: http://svn.collab.net/repos/trunk/README $
+	Id		其他关键字压缩组合，它看起来就像$Id: calc.c 148 2006-07-28 21:30:43Z sally $
+
+	关键字扩展是客户端操作
+	svn:keywords属性设置起作用的关键字名称列表，用空格分隔
+	$Key$::然后紧跟一组空格定义了固定宽度，替换仅在空格范围内发生（以字节为单位，可能会破坏多字节值）
+	
+在文件中自动得到全局修订版本号
+	svnversion就是为此设计
+	http://www.subversion.org.cn/svnbook/nightly/svn.ref.svnversion.re.html
+	svnversion	打印修订版本范围

@@ -1,0 +1,950 @@
+
+hadoop
+维护	系统维护，异常处理，参与统计组hadoop程序优化	10-20t
+推广	在乐园的统计中应用Hadoop，考虑是否可以和统计组共用	5-10t
+研究
+	版本和Bug跟踪，输出对应版本的中文文档和主要bug描述文档？3-4t
+	Streaming编程，文档	2-4t
+	压缩策略研究，统计组数据的压缩策略和实现 3-5t
+	原有研究小课题文档的内容补充	5-10t
+	Hadoop的MapReduce程序的测试		4-5t
+	hadoop的日志系统，方便监控、管理和调试 3-5t
+	InputFormat、OutputFormat接口和继承关系	3t
+	hadoop rpc机制 5t
+	hive sql解析器和hive执行分析	主要实现代码分析 5-10t
+	
+广度
+	mahout了解，支持，输出部署运行文档？ 3-5t
+	sqoop hue学习了解，安装测试，无文档输出	2t + 2t
+	zookeeper学习，代码分析？ 5t
+	oozie引用实例（示例？或推广，寻找引用基础）	3-5t
+	Flume是Cloudera提供的日志收集系统  2-3t
+	Pig	3-5t
+	cloudera manager学习，应用，看是否适用 一个hadoop系列管理软件 
+	
+hbase
+	hbase深入研究	原理，程序结构分析，HFile存储格式，重点部分分析，不涉及代码细节，主要是加深对hbase的理解，出文档《Hbase结构分析》 10-20t
+
+sphinx		
+	支持 2t
+	sphinx_http_proxy推广，跟进 3t
+
+	
+80t-133t
+
+
+
+
+
+ 
+20z*5=100t
+
+网络经验
+抓包
+补充抓包命令
+观察网络状态 netstat
+
+ps -ef|grep proxy 
+ls -l /proc/14470/fd
+/usr/sbin/lsof -p 14470
+
+close shutdown
+
+
+valgrind --leak-check=full --show-reachable=yes --track-fds=yes sphinx_http_proxy
+
+
+读取tcp数据后才返回，否则会reset，造成挂住
+
+
+b sphinx_query
+b sphinx_run_queries
+b net_connect_ex
+b net_sock_eof
+b sphinx_open
+b net_create_inet_sock
+
+net_connect_get
+
+
+sock_close ( sock ); ??
+
+event_init
+event_loop
+event_set		EV_READ	EV_PERSIST
+event_add
+event_dispatch
+
+event_base_set
+event_base_free
+event_base_loopexit
+
+evbuffer_new
+evbuffer_add_printf
+evhttp_send_reply
+evbuffer_free
+
+evhttp_connection_get_peer 获取远程地址和端口
+evhttp_request_uri	
+evhttp_parse_query
+evhttp_find_header
+evhttp_clear_headers
+evhttp_set_cb
+evhttp_set_gencb
+evhttpmq_exit
+evhttp_connection_new
+evhttp_connection_set_local_address
+evhttp_set_timeout
+evhttp_request_new
+evhttp_make_request
+evhttp_connection_set_timeout
+evhttp_request_uri
+evhttp_request_get_evhttp_uri
+
+cq_init
+cq_push
+
+
+struct event_base  *gpoEventBase = NULL;
+
+
+----------------------------------------------------
+多线程
+
+evhttp本身的设计对多线程的支持不好。实在要多线程的话，那先用主线程循环accept接入的连接。
+然后每个工作线程自己初始化一个evhttp实例，主线程接入连接后，把它的fd传递给某个工作线程，
+加入它自己的evhttp对象中就可以了。
+
+memcached的多线程主要是通过实例化多个libevent实现的,分别是一个主线程和n个workers线程，
+无论是主线程还是workers线程全部通过libevent管理网络事件，实际上每个线程都是一个单独的libevent实例
+比较完成的mem的多线程分析
+http://www.iteye.com/topic/344172
+
+
+一个简单 Echo Server 的例子程序，这个也很值得看
+http://54min.com/post/non-blocking-socket-server-using-libevent.html
+
+libevent 2 文档
+http://www.wangafu.net/~nickm/libevent-book/
+
+对libevent的简单分析，比较好
+http://godorz.info/2011/03/the-annotated-libevent-sources-about-http/
+
+
+
+
+-----------
+添加事件的主要操作：
+event_set
+event_base_set
+event_add
+event_base_loop
+event_dispatch
+
+主线程监听
+
+worker线程
+接收主线程的通知
+
+sphThreadCreate
+pthread_create
+sphThreadProcWrapper
+
+-------------------------------------------------------
+event_base_new
+evhttp_new
+evhttp_bind_socket
+evhttp_set_timeout
+evhttp_set_gencb
+event_base_dispatch
+evhttp_free
+event_base_free
+
+-------------------------------------------------------
+服务器端，基本api操作
+sockfd=socket
+setsockopt	非阻塞，SO_KEEPALIVE，SO_REUSEADDR
+bind
+listen
+
+select	?	模式？
+accept
+
+
+closesocket？
+
+select ？
+newsockfd=accept
+connect客户端
+read
+write
+recv
+-------------------------------------------------------
+sphinx_http_proxy的多线程设计
+
+因为连接后面的sphinx的查询比较慢，平均40ms，查询比较快，但是加上网络后比较慢，必须使用多线程
+
+主线程
+	监听网络，任务到来时，包装并发送到任务队列等待，主线程返回继续，阻塞队列（在普通队列上包装cond）
+
+管理线程，线程池
+	从队列中取任务，管理一个线程池，[minthread,maxthread]，当一个线程空闲超过一定时间，关闭（）。
+	从队列中取任务，从线程池取线程，把任务交给线程，然后再取任务。
+需要定时器，定时检查空闲时间，从资源池清理它们。
+
+	
+工作线程，由管理线程创建，归于线程池
+	完成任务后，阻塞，改变状态，进入线程池等待新的任务。
+	
+
+资源池
+	放sphinx_client的连接，这些连接保持长连接，并在空闲一定时间后，此连接关闭。
+	资源池负责生成并初始化sphinx_client。
+需要定时器，定时检查sphinx_client的空闲时间，从资源池清理它们。
+
+
+static struct evhttp* evhttp_new_object(void)
+int evhttp_accept_socket(struct evhttp *http, evutil_socket_t fd)
+
+int 	evhttp_parse_query (const char *uri, struct evkeyvalq *headers)
+int 	evhttp_parse_query_str (const char *uri, struct evkeyvalq *headers)
+int 	evhttp_remove_header (struct evkeyvalq *headers, const char *key)
+void 	evhttp_request_free (struct evhttp_request *req)
+struct evhttp_request * 	evhttp_request_new (void(*cb)(struct evhttp_request *, void *), void *arg) 
+	构建
+int 	evhttp_make_request (struct evhttp_connection *evcon, struct evhttp_request *req, enum evhttp_cmd_type type, const char *uri)
+	在特定连接上构建evhttp_request
+void evhttp_request_own	(	struct evhttp_request * 	req	 ) 	
+
+struct evhttp_connection * 	evhttp_connection_base_new (struct event_base *base, struct evdns_base *dnsbase, const char *address, unsigned short port)
+	
+static struct evhttp_connection* evhttp_get_request_connection(struct evhttp* http,evutil_socket_t fd, struct sockaddr *sa, ev_socklen_t salen)
+evhttp_associate_new_request_with_connection
+
+
+
+-----
+尝试使用，看看如下是否可行？
+evhttp	evbase	= NULL ?
+evhttp_connection = evhttp_connection_base_new 传递base=null？	这里的地址和端口是传入进来的地址和端口，base可以设置为NULL
+	
+	evhttp_request_new
+evhttp_request = evhttp_make_request()	?这里会构建request吗？
+	把requeest装入到conn中，并且如果已经连接，并且是在处理队列中的第一个，分发
+	
+输入输出？
+
+没有 evhttp_new_object 的帮助是不行的
+evhttp_new_object
+evhttp_accept_socket	fd是服务器端的fd
+
+
+---------有可能可以移植，不过，还需要深入看。	主要是evhttp_accept_socket这个
+
+先使用简单方法处理。
+
+
+
+
+
+[warn] Epoll ADD(1) on fd 1368 failed.  Old events were 0; read change was 1 (add); write change was 0 (none): Invalid argument 
+fcntl(F_GETFL) failed: Bad file descriptor
+
+in sphinx_open (client=Cannot access memory at address 0xfffffffffffffff8) at libsphinxclient/sphinxclient.c:1559
+1559            client->sock = net_connect ( client );
+[warn] epoll_wait: Invalid argument
+
+
+#0  0x0000000000409054 in sphinx_get_int (result=0x19662e08, match=0, attr=-2) at libsphinxclient/sphinxclient.c:1812
+#1  0x0000000000408ff8 in sphinx_get_id (result=0x19662e08, match=0) at libsphinxclient/sphinxclient.c:1797
+#2  0x000000000041b810 in SearchResult::getId (this=0x7bea0cf0, idx=0) at src/SearchResult.h:88
+#3  0x0000000000410c76 in convert_to_json_string (sr=@0x7bea0cf0) at src/main.cpp:370
+#4  0x0000000000411bae in deal_search_handler (http_query=@0x7bea0f70) at src/main.cpp:440
+#5  0x0000000000412ca4 in http_handler (socket_client=0x2aaab0005500, keep_alive=0x7bea105f) at src/main.cpp:734
+#6  0x000000000041ba5a in SimpleWorkTask::Run (this=0x2aaab0005ce0) at src/main.cpp:1160
+
+
+#0  0x0000000000424175 in duplicateStringValue (value=0x2aaabc00a9 <Address 0x2aaabc00a9 out of bounds>, length=4294967295)    at json/jsoncpp.cpp:1598
+#1  0x000000000042445c in Value (this=0x2aaac780a990, value=0x2aaabc00a9 <Address 0x2aaabc00a9 out of bounds>)    at json/jsoncpp.cpp:1883
+#2  0x0000000000410a03 in convert_to_json_string (sr=@0x2aaac780acf0) at src/main.cpp:356
+#3  0x0000000000411bae in deal_search_handler (http_query=@0x2aaac780af70) at src/main.cpp:440
+#4  0x0000000000412ca4 in http_handler (socket_client=0x2aaab40101a0, keep_alive=0x2aaac780b05f) at src/main.cpp:734
+#5  0x000000000041ba5a in SimpleWorkTask::Run (this=0x2aaab4009e00) at src/main.cpp:1160
+#6  0x0000000000434713 in CThreadPool::ThreadFunc (p_thread_pool=0x182184b0) at libthreadpool/CThread.cpp:119
+#7  0x00000035ed2064a7 in start_thread () from /lib64/libpthread.so.0
+#8  0x00000035ec6d3c2d in clone () from /lib64/libc.so.6
+
+
+WARN:WARN:INFO:[/search] OK
+
+sphinx_query() must not be called after sphinx_add_query()
+
+
+
+valgrind --tool=helgrind --read-var-info=yes --track-lockorders=yes --log-file=valgrind.helgrind
+
+
+
+host=192.168.22.33, error=Success
+
+
+
+client->num_reqs!=0
+
+m_before_run_task_cb != 0, count get sphinx client!!!
+
+ 
+export URL="http://192.168.22.32:2046/search?index=mysql&q=+%E6%90%9C%E7%B4%A2&matchmode=SPH_MATCH_EXTENDED2&rankingmode=SPH_RANK_PROXIMITY_BM25&sortmode=SPH_SORT_RELEVANCE"
+
+
+accept failed:Too many open files
+
+测试异常记录：
+apr_socket_connect(): Cannot assign requested address (99)
+多次连接后，会，仅网络连接，不做业务，连接后直接关闭。
+连续大批量并发连接会报上述错误，等几分钟后，又可以连接？
+
+使用的是 event.h
+
+
+
+apr_socket_connect(): Cannot assign requested address
+
+
+使用libcurl 向本机的nginx 发请求，每隔一段时间，会出“Couldn't connect to server”，此时使用telnet 也会有错，Couldn't connect to server，同时观察netstat 发现很多TIME_WAIT。
+分析：客户端频繁的连服务器，由于每次连接都在很短的时间内结束，导致很多的TIME_WAIT，以至于用光了可用的端口号，所以新的连接没办法绑定端口，即“Cannot assign requested address”
+在程序中设置立即关闭不经历TIME_WAIT，以重用端口
+开启对于TCP时间戳的支持
+sysctl -w net.ipv4.tcp_timestamps=1
+TCP连接中TIME-WAIT sockets的快速回收
+sysctl -w net.ipv4.tcp_tw_recycle=1
+关于此问题的说明
+http://www.51testing.com/?uid-66821-action-viewspace-itemid-147278
+
+
+
+
+sphinx open fail:failed to send client protocol version
+ [WARN]:m_before_run_task_cb != 0, count get sphinx client!!!
+2012-01-06 10:31:38 [WARN]:sphinx open fail:failed to send client protocol version
+
+
+
+测试记录
+
+
+
+
+
+
+inputpath:\\test.txt
+outputpath:\\test.out
+12/01/06 15:50:41 INFO jvm.JvmMetrics: Initializing JVM Metrics with processName=JobTracker, sessionId=
+12/01/06 15:50:41 WARN util.NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+Exception in thread "main" java.io.IOException: Cannot run program "chmod": CreateProcess error=2, ?????μ???
+ at java.lang.ProcessBuilder.start(ProcessBuilder.java:459)
+ at org.apache.hadoop.util.Shell.runCommand(Shell.java:200)
+ at org.apache.hadoop.util.Shell.run(Shell.java:182)
+ at org.apache.hadoop.util.Shell$ShellCommandExecutor.execute(Shell.java:375)
+ at org.apache.hadoop.util.Shell.execCommand(Shell.java:461)
+ at org.apache.hadoop.util.Shell.execCommand(Shell.java:444)
+ at org.apache.hadoop.fs.RawLocalSystem.execCommand(RawLocalSystem.java:508)
+ at org.apache.hadoop.fs.RawLocalSystem.setPermission(RawLocalSystem.java:499)
+ at org.apache.hadoop.fs.RawLocalSystem.mkdirs(RawLocalSystem.java:319)
+ at org.apache.hadoop.fs.FilterSystem.mkdirs(FilterSystem.java:189)
+ at org.apache.hadoop.mapreduce.JobSubmissions.getStagingDir(JobSubmissions.java:126)
+ at org.apache.hadoop.mapred.JobClient$2.run(JobClient.java:839)
+ at org.apache.hadoop.mapred.JobClient$2.run(JobClient.java:833)
+ at java.security.AccessController.doPrivileged(Native Method)
+ at javax.security.auth.Subject.doAs(Subject.java:396)
+ at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1127)
+ at org.apache.hadoop.mapred.JobClient.submitJobInternal(JobClient.java:833)
+ at org.apache.hadoop.mapreduce.Job.submit(Job.java:476)
+ at org.apache.hadoop.mapreduce.Job.waitForCompletion(Job.java:506)
+ at TotalStat.run(TotalStat.java:117)
+ at TotalStat.main(TotalStat.java:82)
+Caused by: java.io.IOException: CreateProcess error=2, ?????μ???
+ at java.lang.ProcessImpl.create(Native Method)
+ at java.lang.ProcessImpl.<init>(ProcessImpl.java:81)
+ at java.lang.ProcessImpl.start(ProcessImpl.java:30)
+ at java.lang.ProcessBuilder.start(ProcessBuilder.java:452)
+ ... 20 mor
+
+ 
+sphinx_http_proxy 调试程序，测试程序，写文档。调试完成，测试正在进行，功能测试和性能测试已经完成，内存泄露测试正在进行，文档编写刚开始。4天
+
+
+valgrind --leak-check=full --show-reachable=yes sphinx_http_proxy_c
+
+==23674== ERROR SUMMARY: 12 errors from 3 contexts (suppressed: 4 from 1)
+==23674== malloc/free: in use at exit: 6,072 bytes in 27 blocks.
+==23674== malloc/free: 4,547 allocs, 4,520 frees, 276,136 bytes allocated.
+==23674== For counts of detected errors, rerun with: -v
+==23674== searching for pointers to 27 not-freed blocks.
+==23674== checked 10,681,032 bytes.
+==23674== 
+==23674== Thread 1:
+==23674== 
+==23674== 56 bytes in 5 blocks are indirectly lost in loss record 1 of 7
+==23674==    at 0x4A05809: malloc (vg_replace_malloc.c:149)
+==23674==    by 0x408AEF: sphinx_malloc (sphinxclient.c:1612)
+==23674==    by 0x408EB3: sphinx_run_queries (sphinxclient.c:1698)
+==23674==    by 0x406FB1: sphinx_query (sphinxclient.c:902)
+==23674==    by 0x412705: search(SphinxQueryData const&, SearchResult*) (main.cpp:443)
+==23674==    by 0x412C73: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:562)
+==23674==    by 0x4136F6: http_handler(sockclient*, bool*) (main.cpp:832)
+==23674==    by 0x41C6E9: SimpleWorkTask::Run() (main.cpp:1120)
+==23674==    by 0x435433: CThreadPool::ThreadFunc(void*) (CThread.cpp:139)
+==23674==    by 0x35ED2064A6: start_thread (in /lib64/libpthread-2.5.so)
+==23674==    by 0x35EC6D3C2C: clone (in /lib64/libc-2.5.so)
+==23674== 
+==23674== 
+==23674== 236 bytes in 9 blocks are indirectly lost in loss record 2 of 7
+==23674==    at 0x4A05809: malloc (vg_replace_malloc.c:149)
+==23674==    by 0x4059B2: chain (sphinxclient.c:366)
+==23674==    by 0x405A9D: strchain (sphinxclient.c:387)
+==23674==    by 0x405C06: sphinx_set_server (sphinxclient.c:441)
+==23674==    by 0x411A29: create_sphinx_client() (main.cpp:220)
+==23674==    by 0x411B08: get_sphinx_client(unsigned long) (main.cpp:248)
+==23674==    by 0x411BB5: get_thread_sphinx_client() (main.cpp:262)
+==23674==    by 0x4121D7: search(SphinxQueryData const&, SearchResult*) (main.cpp:309)
+==23674==    by 0x412C73: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:562)
+==23674==    by 0x4136F6: http_handler(sockclient*, bool*) (main.cpp:832)
+==23674==    by 0x41C6E9: SimpleWorkTask::Run() (main.cpp:1120)
+==23674==    by 0x435433: CThreadPool::ThreadFunc(void*) (CThread.cpp:139)
+==23674== 
+==23674== 
+==23674== 288 bytes in 9 blocks are definitely lost in loss record 3 of 7
+==23674==    at 0x4A05809: malloc (vg_replace_malloc.c:149)
+==23674==    by 0x40ADD7: http_add_header (http-internal.c:228)
+==23674==    by 0x40B017: http_request_parse (http-internal.c:287)
+==23674==    by 0x41318E: http_handler(sockclient*, bool*) (main.cpp:749)
+==23674==    by 0x41C6E9: SimpleWorkTask::Run() (main.cpp:1120)
+==23674==    by 0x435433: CThreadPool::ThreadFunc(void*) (CThread.cpp:139)
+==23674==    by 0x35ED2064A6: start_thread (in /lib64/libpthread-2.5.so)
+==23674==    by 0x35EC6D3C2C: clone (in /lib64/libc-2.5.so)
+==23674== 
+==23674== 
+==23674== 288 bytes in 1 blocks are possibly lost in loss record 4 of 7
+==23674==    at 0x4A04B32: calloc (vg_replace_malloc.c:279)
+==23674==    by 0x35EC20FEF2: _dl_allocate_tls (in /lib64/ld-2.5.so)
+==23674==    by 0x35ED206C29: pthread_create@@GLIBC_2.2.5 (in /lib64/libpthread-2.5.so)
+==23674==    by 0x434F80: CThreadPool::Create(int) (CThread.cpp:206)
+==23674==    by 0x435547: CThreadPool::init_(int, int) (CThread.cpp:28)
+==23674==    by 0x4355D0: CThreadPool::CThreadPool(int, int) (CThread.cpp:15)
+==23674==    by 0x40F4EF: main (main.cpp:1477)
+==23674== 
+==23674== 
+==23674== 448 bytes in 1 blocks are indirectly lost in loss record 5 of 7
+==23674==    at 0x4A05809: malloc (vg_replace_malloc.c:149)
+==23674==    by 0x4A05883: realloc (vg_replace_malloc.c:306)
+==23674==    by 0x406418: sphinx_add_filter_entry (sphinxclient.c:634)
+==23674==    by 0x406549: sphinx_add_filter (sphinxclient.c:658)
+==23674==    by 0x4122CF: search(SphinxQueryData const&, SearchResult*) (main.cpp:331)
+==23674==    by 0x412C73: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:562)
+==23674==    by 0x4136F6: http_handler(sockclient*, bool*) (main.cpp:832)
+==23674==    by 0x41C6E9: SimpleWorkTask::Run() (main.cpp:1120)
+==23674==    by 0x435433: CThreadPool::ThreadFunc(void*) (CThread.cpp:139)
+==23674==    by 0x35ED2064A6: start_thread (in /lib64/libpthread-2.5.so)
+==23674==    by 0x35EC6D3C2C: clone (in /lib64/libc-2.5.so)
+==23674== 
+==23674== 
+==23674== 724 bytes in 1 blocks are indirectly lost in loss record 6 of 7
+==23674==    at 0x4A05809: malloc (vg_replace_malloc.c:149)
+==23674==    by 0x4087FC: net_get_response (sphinxclient.c:1511)
+==23674==    by 0x40952C: net_simple_query (sphinxclient.c:1863)
+==23674==    by 0x40A37F: sphinx_status (sphinxclient.c:2180)
+==23674==    by 0x411EED: deal_status_handler(std::string&) (main.cpp:602)
+==23674==    by 0x4139A3: http_handler(sockclient*, bool*) (main.cpp:856)
+==23674==    by 0x41C6E9: SimpleWorkTask::Run() (main.cpp:1120)
+==23674==    by 0x435433: CThreadPool::ThreadFunc(void*) (CThread.cpp:139)
+==23674==    by 0x35ED2064A6: start_thread (in /lib64/libpthread-2.5.so)
+==23674==    by 0x35EC6D3C2C: clone (in /lib64/libc-2.5.so)
+==23674== 
+==23674== 
+==23674== 5,496 (4,032 direct, 1,464 indirect) bytes in 1 blocks are definitely lost in loss record 7 of 7
+==23674==    at 0x4A05809: malloc (vg_replace_malloc.c:149)
+==23674==    by 0x40519C: sphinx_create (sphinxclient.c:201)
+==23674==    by 0x4119F2: create_sphinx_client() (main.cpp:217)
+==23674==    by 0x411B08: get_sphinx_client(unsigned long) (main.cpp:248)
+==23674==    by 0x411BB5: get_thread_sphinx_client() (main.cpp:262)
+==23674==    by 0x4121D7: search(SphinxQueryData const&, SearchResult*) (main.cpp:309)
+==23674==    by 0x412C73: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:562)
+==23674==    by 0x4136F6: http_handler(sockclient*, bool*) (main.cpp:832)
+==23674==    by 0x41C6E9: SimpleWorkTask::Run() (main.cpp:1120)
+==23674==    by 0x435433: CThreadPool::ThreadFunc(void*) (CThread.cpp:139)
+==23674==    by 0x35ED2064A6: start_thread (in /lib64/libpthread-2.5.so)
+==23674==    by 0x35EC6D3C2C: clone (in /lib64/libc-2.5.so)
+==23674== 
+==23674== LEAK SUMMARY:
+==23674==    definitely lost: 4,320 bytes in 10 blocks.
+==23674==    indirectly lost: 1,464 bytes in 16 blocks.
+==23674==      possibly lost: 288 bytes in 1 blocks.
+==23674==    still reachable: 0 bytes in 0 blocks.
+==23674==         suppressed: 0 bytes in 0 blocks.
+
+
+
+
+
+
+
+
+tcp        0      0 platform32:54669            platform32:sdfunc           ESTABLISHED 
+tcp        0      0 platform32:54667            platform32:sdfunc           ESTABLISHED 
+tcp        0      0 platform32:54661            platform32:sdfunc           ESTABLISHED 
+tcp        0      0 platform32:54684            platform32:sdfunc           ESTABLISHED 
+tcp        0      0 platform32:54681            platform32:sdfunc           ESTABLISHED 
+tcp        0      0 platform32:54682            platform32:sdfunc           ESTABLISHED 
+tcp        0      0 platform32:54677            platform32:sdfunc           ESTABLISHED 
+tcp        0      0 platform32:54679            platform32:sdfunc           ESTABLISHED 
+tcp        0      0 platform32:54673            platform32:sdfunc           ESTABLISHED 
+tcp        0      0 platform32:54675            platform32:sdfunc           ESTABLISHED 
+tcp        0      0 platform32:sdfunc           platform32:54661            ESTABLISHED 
+tcp        0      0 platform32:sdfunc           platform32:54669            ESTABLISHED 
+tcp        0      0 platform32:sdfunc           platform32:54667            ESTABLISHED 
+tcp        0      0 platform32:sdfunc           platform32:54679            ESTABLISHED 
+tcp        0      0 platform32:sdfunc           platform32:54677            ESTABLISHED 
+tcp        0      0 platform32:sdfunc           platform32:54675            ESTABLISHED 
+tcp        0      0 platform32:sdfunc           platform32:54673            ESTABLISHED 
+tcp        0      0 platform32:sdfunc           platform32:54684            ESTABLISHED 
+tcp        0      0 platform32:sdfunc           platform32:54682            ESTABLISHED 
+tcp        0      0 platform32:sdfunc           platform32:54681            ESTABLISHED 
+tcp        5      0 platform32:51692            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51693            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51691            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51686            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51687            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51683            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51708            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51711            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51704            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51706            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51701            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51702            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51696            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51698            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51854            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51852            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51850            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51848            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51846            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51844            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51842            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51840            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51869            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51867            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51866            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51864            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51862            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51861            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51858            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51856            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51887            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51884            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51882            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51878            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51874            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51872            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51726            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51723            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51722            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51721            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51718            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51716            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51714            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51712            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51742            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51740            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51738            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51736            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51734            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51732            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51729            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51728            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51759            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51755            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51753            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51752            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51749            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51747            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51746            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51744            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51772            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51771            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51770            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51768            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51766            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51762            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51761            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51760            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51791            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51788            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51786            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51784            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51782            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51780            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51778            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51776            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51807            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51806            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51805            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51802            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51800            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51798            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51796            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51794            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51792            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51823            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51821            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51820            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51818            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51816            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51815            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51812            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51810            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51838            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51837            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51834            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51832            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51828            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51825            platform33:9312             CLOSE_WAIT  
+tcp        5      0 platform32:51824            platform33:9312             CLOSE_WAIT  
+
+
+
+
+
+33上
+
+tcp        0      0 platform33:9312             platform32:51302            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51299            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51298            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51308            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51310            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51307            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51306            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51318            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51313            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51325            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51324            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51327            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51321            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51322            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51277            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51276            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51285            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51284            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51281            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51280            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51283            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51292            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51295            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51291            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51290            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51335            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51334            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51329            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51330            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51341            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51342            ESTABLISHED 
+tcp        0      0 platform33:9312             platform32:51339            FIN_WAIT2   
+tcp        0      0 platform33:9312             platform32:51345            FIN_WAIT2  
+
+
+
+netstat -na |grep 2046
+
+
+
+#0  0x00000000004083bd in net_create_inet_sock (client=0x9f41ef0) at libsphinxclient/sphinxclient.c:1362
+#1  0x0000000000408730 in net_connect_get (client=0x9f41ef0) at libsphinxclient/sphinxclient.c:1482
+#2  0x000000000040901c in sphinx_open (client=0x9f41ef0) at libsphinxclient/sphinxclient.c:1753
+#3  0x0000000000408c2e in net_connect_ex (client=0x9f41ef0) at libsphinxclient/sphinxclient.c:1600
+#4  0x0000000000409263 in sphinx_run_queries (client=0x9f41ef0) at libsphinxclient/sphinxclient.c:1822
+#5  0x0000000000407192 in sphinx_query (client=0x9f41ef0, query=0x2aaabc012628 "\220\234索", index_list=0x2aaabc017a88 "mysql", 
+    comment=0x0) at libsphinxclient/sphinxclient.c:942
+#6  0x0000000000413318 in search (sqd=@0x45924c20, sr=0x45924d50) at src/main.cpp:446
+#7  0x0000000000413882 in deal_search_handler (http_query=@0x45924f80, json=@0x45924f70) at src/main.cpp:565
+#8  0x0000000000414305 in http_handler (socket_client=0x2aaac000c510, keep_alive=0x4592506f) at src/main.cpp:835
+#9  0x000000000041d1d2 in SimpleWorkTask::Run (this=0x2aaac001d110) at src/main.cpp:1113
+#10 0x000000000043622f in CThreadPool::ThreadFunc (p_thread_pool=0x9f2a660) at libthreadpool/CThread.cpp:160
+#11 0x00000035ed2064a7 in start_thread () from /lib64/libpthread.so.0
+#12 0x00000035ec6d3c2d in clone () from /lib64/libc.so.6
+
+
+
+
+
+valgrind --leak-check=full --show-reachable=yes --track-fds=yes sphinx_http_proxy
+
+==16303== 
+==16303== FILE DESCRIPTORS: 14 open at exit.
+==16303== Open AF_INET socket 18: 192.168.22.32:54472 <-> 192.168.22.33:9312
+==16303==    at 0x35EC6D4AA7: socket (in /lib64/libc-2.5.so)
+==16303==    by 0x408452: net_create_inet_sock (sphinxclient.c:1377)
+==16303==    by 0x4087AD: net_connect_get (sphinxclient.c:1493)
+==16303==    by 0x409099: sphinx_open (sphinxclient.c:1764)
+==16303==    by 0x408CAB: net_connect_ex (sphinxclient.c:1611)
+==16303==    by 0x4092E0: sphinx_run_queries (sphinxclient.c:1833)
+==16303==    by 0x407191: sphinx_query (sphinxclient.c:942)
+==16303==    by 0x413397: search(SphinxQueryData const&, SearchResult*) (main.cpp:446)
+==16303==    by 0x413901: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:565)
+==16303==    by 0x414384: http_handler(sockclient*, bool*) (main.cpp:835)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303== 
+==16303== Open AF_INET socket 26: 192.168.22.32:55461 <-> 192.168.22.33:9312
+==16303==    at 0x35EC6D4AA7: socket (in /lib64/libc-2.5.so)
+==16303==    by 0x408452: net_create_inet_sock (sphinxclient.c:1377)
+==16303==    by 0x4087AD: net_connect_get (sphinxclient.c:1493)
+==16303==    by 0x409099: sphinx_open (sphinxclient.c:1764)
+==16303==    by 0x411A8F: create_sphinx_client() (main.cpp:221)
+==16303==    by 0x41278F: get_sphinx_client(unsigned long) (main.cpp:250)
+==16303==    by 0x412843: get_thread_sphinx_client() (main.cpp:264)
+==16303==    by 0x412E8B: search(SphinxQueryData const&, SearchResult*) (main.cpp:312)
+==16303==    by 0x413901: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:565)
+==16303==    by 0x414384: http_handler(sockclient*, bool*) (main.cpp:835)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303== 
+==16303== Open AF_INET socket 68: 192.168.22.32:55459 <-> 192.168.22.33:9312
+==16303==    at 0x35EC6D4AA7: socket (in /lib64/libc-2.5.so)
+==16303==    by 0x408452: net_create_inet_sock (sphinxclient.c:1377)
+==16303==    by 0x4087AD: net_connect_get (sphinxclient.c:1493)
+==16303==    by 0x409099: sphinx_open (sphinxclient.c:1764)
+==16303==    by 0x411A8F: create_sphinx_client() (main.cpp:221)
+==16303==    by 0x41278F: get_sphinx_client(unsigned long) (main.cpp:250)
+==16303==    by 0x412843: get_thread_sphinx_client() (main.cpp:264)
+==16303==    by 0x412E8B: search(SphinxQueryData const&, SearchResult*) (main.cpp:312)
+==16303==    by 0x413901: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:565)
+==16303==    by 0x414384: http_handler(sockclient*, bool*) (main.cpp:835)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303== 
+==16303== Open AF_INET socket 62: 192.168.22.32:55458 <-> 192.168.22.33:9312
+==16303==    at 0x35EC6D4AA7: socket (in /lib64/libc-2.5.so)
+==16303==    by 0x408452: net_create_inet_sock (sphinxclient.c:1377)
+==16303==    by 0x4087AD: net_connect_get (sphinxclient.c:1493)
+==16303==    by 0x409099: sphinx_open (sphinxclient.c:1764)
+==16303==    by 0x411A8F: create_sphinx_client() (main.cpp:221)
+==16303==    by 0x41278F: get_sphinx_client(unsigned long) (main.cpp:250)
+==16303==    by 0x412843: get_thread_sphinx_client() (main.cpp:264)
+==16303==    by 0x412E8B: search(SphinxQueryData const&, SearchResult*) (main.cpp:312)
+==16303==    by 0x413901: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:565)
+==16303==    by 0x414384: http_handler(sockclient*, bool*) (main.cpp:835)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303== 
+==16303== Open AF_INET socket 36: 192.168.22.32:55456 <-> 192.168.22.33:9312
+==16303==    at 0x35EC6D4AA7: socket (in /lib64/libc-2.5.so)
+==16303==    by 0x408452: net_create_inet_sock (sphinxclient.c:1377)
+==16303==    by 0x4087AD: net_connect_get (sphinxclient.c:1493)
+==16303==    by 0x409099: sphinx_open (sphinxclient.c:1764)
+==16303==    by 0x411A8F: create_sphinx_client() (main.cpp:221)
+==16303==    by 0x41278F: get_sphinx_client(unsigned long) (main.cpp:250)
+==16303==    by 0x412843: get_thread_sphinx_client() (main.cpp:264)
+==16303==    by 0x412E8B: search(SphinxQueryData const&, SearchResult*) (main.cpp:312)
+==16303==    by 0x413901: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:565)
+==16303==    by 0x414384: http_handler(sockclient*, bool*) (main.cpp:835)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303== 
+==16303== Open AF_INET socket 14: 192.168.22.32:55452 <-> unbound
+==16303==    at 0x35EC6D4AA7: socket (in /lib64/libc-2.5.so)
+==16303==    by 0x408452: net_create_inet_sock (sphinxclient.c:1377)
+==16303==    by 0x4087AD: net_connect_get (sphinxclient.c:1493)
+==16303==    by 0x409099: sphinx_open (sphinxclient.c:1764)
+==16303==    by 0x411A8F: create_sphinx_client() (main.cpp:221)
+==16303==    by 0x41278F: get_sphinx_client(unsigned long) (main.cpp:250)
+==16303==    by 0x412843: get_thread_sphinx_client() (main.cpp:264)
+==16303==    by 0x412E8B: search(SphinxQueryData const&, SearchResult*) (main.cpp:312)
+==16303==    by 0x413901: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:565)
+==16303==    by 0x414384: http_handler(sockclient*, bool*) (main.cpp:835)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303== 
+==16303== Open AF_INET socket 20: 192.168.22.32:55449 <-> 192.168.22.33:9312
+==16303==    at 0x35EC6D4AA7: socket (in /lib64/libc-2.5.so)
+==16303==    by 0x408452: net_create_inet_sock (sphinxclient.c:1377)
+==16303==    by 0x4087AD: net_connect_get (sphinxclient.c:1493)
+==16303==    by 0x409099: sphinx_open (sphinxclient.c:1764)
+==16303==    by 0x411A8F: create_sphinx_client() (main.cpp:221)
+==16303==    by 0x41278F: get_sphinx_client(unsigned long) (main.cpp:250)
+==16303==    by 0x412843: get_thread_sphinx_client() (main.cpp:264)
+==16303==    by 0x412E8B: search(SphinxQueryData const&, SearchResult*) (main.cpp:312)
+==16303==    by 0x413901: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:565)
+==16303==    by 0x414384: http_handler(sockclient*, bool*) (main.cpp:835)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303== 
+==16303== Open AF_INET socket 13: 192.168.22.32:55448 <-> 192.168.22.33:9312
+==16303==    at 0x35EC6D4AA7: socket (in /lib64/libc-2.5.so)
+==16303==    by 0x408452: net_create_inet_sock (sphinxclient.c:1377)
+==16303==    by 0x4087AD: net_connect_get (sphinxclient.c:1493)
+==16303==    by 0x409099: sphinx_open (sphinxclient.c:1764)
+==16303==    by 0x411A8F: create_sphinx_client() (main.cpp:221)
+==16303==    by 0x41278F: get_sphinx_client(unsigned long) (main.cpp:250)
+==16303==    by 0x412843: get_thread_sphinx_client() (main.cpp:264)
+==16303==    by 0x412E8B: search(SphinxQueryData const&, SearchResult*) (main.cpp:312)
+==16303==    by 0x413901: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:565)
+==16303==    by 0x414384: http_handler(sockclient*, bool*) (main.cpp:835)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303== 
+==16303== Open AF_INET socket 10: 192.168.22.32:55446 <-> 192.168.22.33:9312
+==16303==    at 0x35EC6D4AA7: socket (in /lib64/libc-2.5.so)
+==16303==    by 0x408452: net_create_inet_sock (sphinxclient.c:1377)
+==16303==    by 0x4087AD: net_connect_get (sphinxclient.c:1493)
+==16303==    by 0x409099: sphinx_open (sphinxclient.c:1764)
+==16303==    by 0x411A8F: create_sphinx_client() (main.cpp:221)
+==16303==    by 0x41278F: get_sphinx_client(unsigned long) (main.cpp:250)
+==16303==    by 0x412843: get_thread_sphinx_client() (main.cpp:264)
+==16303==    by 0x412E8B: search(SphinxQueryData const&, SearchResult*) (main.cpp:312)
+==16303==    by 0x413901: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:565)
+==16303==    by 0x414384: http_handler(sockclient*, bool*) (main.cpp:835)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303== 
+==16303== Open AF_INET socket 16: 192.168.22.32:55444 <-> 192.168.22.33:9312
+==16303==    at 0x35EC6D4AA7: socket (in /lib64/libc-2.5.so)
+==16303==    by 0x408452: net_create_inet_sock (sphinxclient.c:1377)
+==16303==    by 0x4087AD: net_connect_get (sphinxclient.c:1493)
+==16303==    by 0x409099: sphinx_open (sphinxclient.c:1764)
+==16303==    by 0x411A8F: create_sphinx_client() (main.cpp:221)
+==16303==    by 0x41278F: get_sphinx_client(unsigned long) (main.cpp:250)
+==16303==    by 0x412843: get_thread_sphinx_client() (main.cpp:264)
+==16303==    by 0x412E8B: search(SphinxQueryData const&, SearchResult*) (main.cpp:312)
+==16303==    by 0x413901: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:565)
+==16303==    by 0x414384: http_handler(sockclient*, bool*) (main.cpp:835)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303== 
+==16303== Open AF_INET socket 12: 192.168.22.32:55443 <-> 192.168.22.33:9312
+==16303==    at 0x35EC6D4AA7: socket (in /lib64/libc-2.5.so)
+==16303==    by 0x408452: net_create_inet_sock (sphinxclient.c:1377)
+==16303==    by 0x4087AD: net_connect_get (sphinxclient.c:1493)
+==16303==    by 0x409099: sphinx_open (sphinxclient.c:1764)
+==16303==    by 0x411A8F: create_sphinx_client() (main.cpp:221)
+==16303==    by 0x41278F: get_sphinx_client(unsigned long) (main.cpp:250)
+==16303==    by 0x412843: get_thread_sphinx_client() (main.cpp:264)
+==16303==    by 0x412E8B: search(SphinxQueryData const&, SearchResult*) (main.cpp:312)
+==16303==    by 0x413901: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:565)
+==16303==    by 0x414384: http_handler(sockclient*, bool*) (main.cpp:835)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303== 
+==16303== Open file descriptor 2: /dev/pts/1
+==16303==    <inherited from parent>
+==16303== 
+==16303== Open file descriptor 1: /dev/pts/1
+==16303==    <inherited from parent>
+==16303== 
+==16303== Open file descriptor 0: /dev/pts/1
+==16303==    <inherited from parent>
+==16303== 
+==16303== 
+==16303== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 4 from 1)
+==16303== malloc/free: in use at exit: 450,186 bytes in 12,428 blocks.
+==16303== malloc/free: 12,726,232 allocs, 12,713,804 frees, 682,161,286 bytes allocated.
+==16303== For counts of detected errors, rerun with: -v
+==16303== searching for pointers to 12,428 not-freed blocks.
+==16303== checked 104,944,904 bytes.
+==16303== 
+==16303== 770 bytes in 30 blocks are indirectly lost in loss record 1 of 7
+==16303==    at 0x4A05809: malloc (vg_replace_malloc.c:149)
+==16303==    by 0x405B34: chain (sphinxclient.c:396)
+==16303==    by 0x405C1F: strchain (sphinxclient.c:417)
+==16303==    by 0x405D88: sphinx_set_server (sphinxclient.c:471)
+==16303==    by 0x411A82: create_sphinx_client() (main.cpp:221)
+==16303==    by 0x41278F: get_sphinx_client(unsigned long) (main.cpp:250)
+==16303==    by 0x412843: get_thread_sphinx_client() (main.cpp:264)
+==16303==    by 0x412E8B: search(SphinxQueryData const&, SearchResult*) (main.cpp:312)
+==16303==    by 0x413901: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:565)
+==16303==    by 0x414384: http_handler(sockclient*, bool*) (main.cpp:835)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303== 
+==16303== 
+==16303== 2,880 bytes in 10 blocks are possibly lost in loss record 2 of 7
+==16303==    at 0x4A04B32: calloc (vg_replace_malloc.c:279)
+==16303==    by 0x35EC20FEF2: _dl_allocate_tls (in /lib64/ld-2.5.so)
+==16303==    by 0x35ED206C29: pthread_create@@GLIBC_2.2.5 (in /lib64/libpthread-2.5.so)
+==16303==    by 0x435DD4: CThreadPool::Create(int) (CThread.cpp:225)
+==16303==    by 0x4363B2: CThreadPool::init_(int, int) (CThread.cpp:29)
+==16303==    by 0x43643C: CThreadPool::CThreadPool(int, int) (CThread.cpp:15)
+==16303==    by 0x410195: main (main.cpp:1485)
+==16303== 
+==16303== 
+==16303== 5,080 bytes in 10 blocks are indirectly lost in loss record 3 of 7
+==16303==    at 0x4A05809: malloc (vg_replace_malloc.c:149)
+==16303==    by 0x408EF3: net_get_response (sphinxclient.c:1702)
+==16303==    by 0x409454: sphinx_run_queries (sphinxclient.c:1859)
+==16303==    by 0x407191: sphinx_query (sphinxclient.c:942)
+==16303==    by 0x413397: search(SphinxQueryData const&, SearchResult*) (main.cpp:446)
+==16303==    by 0x413901: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:565)
+==16303==    by 0x414384: http_handler(sockclient*, bool*) (main.cpp:835)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303==    by 0x35ED2064A6: start_thread (in /lib64/libpthread-2.5.so)
+==16303==    by 0x35EC6D3C2C: clone (in /lib64/libc-2.5.so)
+==16303== 
+==16303== 
+==16303== 6,960 bytes in 50 blocks are indirectly lost in loss record 4 of 7
+==16303==    at 0x4A05809: malloc (vg_replace_malloc.c:149)
+==16303==    by 0x409222: sphinx_malloc (sphinxclient.c:1809)
+==16303==    by 0x409639: sphinx_run_queries (sphinxclient.c:1901)
+==16303==    by 0x407191: sphinx_query (sphinxclient.c:942)
+==16303==    by 0x413397: search(SphinxQueryData const&, SearchResult*) (main.cpp:446)
+==16303==    by 0x413901: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:565)
+==16303==    by 0x414384: http_handler(sockclient*, bool*) (main.cpp:835)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303==    by 0x35ED2064A6: start_thread (in /lib64/libpthread-2.5.so)
+==16303==    by 0x35EC6D3C2C: clone (in /lib64/libc-2.5.so)
+==16303== 
+==16303== 
+==16303== 53,122 (40,320 direct, 12,802 indirect) bytes in 10 blocks are definitely lost in loss record 5 of 7
+==16303==    at 0x4A05809: malloc (vg_replace_malloc.c:149)
+==16303==    by 0x4051DC: sphinx_create (sphinxclient.c:208)
+==16303==    by 0x411A4B: create_sphinx_client() (main.cpp:218)
+==16303==    by 0x41278F: get_sphinx_client(unsigned long) (main.cpp:250)
+==16303==    by 0x412843: get_thread_sphinx_client() (main.cpp:264)
+==16303==    by 0x412E8B: search(SphinxQueryData const&, SearchResult*) (main.cpp:312)
+==16303==    by 0x413901: deal_search_handler(evkeyvalq&, std::string&) (main.cpp:565)
+==16303==    by 0x414384: http_handler(sockclient*, bool*) (main.cpp:835)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303==    by 0x35ED2064A6: start_thread (in /lib64/libpthread-2.5.so)
+==16303==    by 0x35EC6D3C2C: clone (in /lib64/libc-2.5.so)
+==16303== 
+==16303== 
+==16303== 71,904 bytes in 2,247 blocks are indirectly lost in loss record 6 of 7
+==16303==    at 0x4A05809: malloc (vg_replace_malloc.c:149)
+==16303==    by 0x40B85B: http_add_header (http-internal.c:228)
+==16303==    by 0x40BABF: http_request_parse (http-internal.c:294)
+==16303==    by 0x413E1C: http_handler(sockclient*, bool*) (main.cpp:753)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303==    by 0x35ED2064A6: start_thread (in /lib64/libpthread-2.5.so)
+==16303==    by 0x35EC6D3C2C: clone (in /lib64/libc-2.5.so)
+==16303== 
+==16303== 
+==16303== 394,184 (322,272 direct, 71,912 indirect) bytes in 10,071 blocks are definitely lost in loss record 7 of 7
+==16303==    at 0x4A05809: malloc (vg_replace_malloc.c:149)
+==16303==    by 0x40B85B: http_add_header (http-internal.c:228)
+==16303==    by 0x40BABF: http_request_parse (http-internal.c:294)
+==16303==    by 0x413E1C: http_handler(sockclient*, bool*) (main.cpp:753)
+==16303==    by 0x41D251: SimpleWorkTask::Run() (main.cpp:1113)
+==16303==    by 0x436219: CThreadPool::ThreadFunc(void*) (CThread.cpp:146)
+==16303==    by 0x35ED2064A6: start_thread (in /lib64/libpthread-2.5.so)
+==16303==    by 0x35EC6D3C2C: clone (in /lib64/libc-2.5.so)
+==16303== 
+==16303== LEAK SUMMARY:
+==16303==    definitely lost: 362,592 bytes in 10,081 blocks.
+==16303==    indirectly lost: 84,714 bytes in 2,337 blocks.
+==16303==      possibly lost: 2,880 bytes in 10 blocks.
+==16303==    still reachable: 0 bytes in 0 blocks.
+==16303==         suppressed: 0 bytes in 0 blocks.
+
+
