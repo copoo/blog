@@ -10,4 +10,4 @@ DIR=$(cd $(dirname "$0"); pwd)
 
 . $DIR/config.sh
 
-ssh $1
+$SSH $1
