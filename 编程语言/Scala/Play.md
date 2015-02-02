@@ -31,3 +31,6 @@ conf/routes
     GET   /clients/all          controllers.Clients.list()
     
     GET   /clients/:id          controllers.Clients.show(id: Long)
+
+play "run -Dconfig.file=application.conf"
+./bin/waup_scheduler -Dhttp.port=10000 -Dhttp.address=wa04

@@ -8,10 +8,10 @@
 
 上面2个文档已经很全面，很深入了。 下面只是快速备查。
 
+    Scala不仅仅是更好的Java。你应该用全新的头脑来学习它
 
 ## 一些记录
 
-1.  Scala不仅仅是更好的Java。你应该用全新的头脑来学习它
 2.  以下都是函数的形式
 
         scala> val addOne = (x: Int) => x + 1
@@ -50,8 +50,6 @@
 
         一个(Int) => String 的函数可以接收任意Int值，并返回一个字符串。
         一个定义为(Int) => String 的偏函数可能不能接受所有Int值为输入。
-    
-
 
 *   基于对象：每个值都是对象
 *   函数编程：
@@ -141,6 +139,8 @@
 *   函数，函数不属于哪个类。
 *   递归函数必须有返回值类型。
 
+### 类型
+
 *   数组
 
         new Array[String](10) 定长
@@ -164,6 +164,117 @@
 *   对象 object
     *   单例对象
     *   伴生对象：类和同名伴生对象可以互相访问私有特性
+
+*   函数
+    *   变长参数
+
+        允许指定最后一个参数可以重复（变长参数），从而允许函数调用者使用变长参数列表来调用该函数，Scala中使用“*”来指明该参数为重复参数。
+
+            def echo (args: String *) =
+              for (arg <- args) println(arg)
+
+        在函数内部，变长参数的类型，实际为一数组。试图直接传入一个数组类型的参数给这个参数，编译器会报错。可以通过在变量后面添加 _*来解决，这个符号告诉Scala编译器在传递参数时逐个传入数组的每个元素，而不是数组整体。
+
+    *   命名参数
+    *   缺省参数
+
+*   类型边界
+
+    *   >:
+    *   
+
+### 常用类型和操作
+
+#### 集合
+
+*   fold
+*   foldLeft
+*   reduce
+*   reduceLeft
+
+#### Map
+
+*   不可变
+
+    *   ms + (k -> v)
+    *   ms updated (k, v) 同上
+    *   ms + (k -> v, l -> w)
+    *   ms ++ kvs
+    *   ms - k
+    *   ms - (k, 1, m)
+    *   ms -- ks
+    *   
+
+*   可变
+    *   ms(k) = v
+    *   ms put (k, v) 同上
+    *   ms += (k -> v)
+    *   ms += (k -> v, l -> w)
+    *   ms ++= kvs
+    *   ms -= k
+    *   ms -= (k, l, m)
+    *   ms --= ks
+    *   ms remove k
+    *   transform
+
+## actor
+
+    Actor是一种基于事件的轻量级线程。
+
+    Actor的主要能力来源于消息传递。
+
+    尽管它听起来与 RPC 机制有点儿相似，但是它们是有区别的。RPC 调用（比如 Java RMI 调用）会在调用者端阻塞，直到服务器端完成处理并发送回某种响应（返回值或异常），而消息传递方法不会阻塞调用者，因此可以巧妙地避免死锁。
+
+    另外，这种方法还有助于使用 “不共享任何东西” 编程风格，也就是说不同的 actor 并不访问共享的数据结构。
+
+1.  系统中的所有事物都可以扮演一个Actor
+2.  Actor之间完全独立
+3.  在收到消息时Actor所采取的所有动作都是并行的，在一个方法中的动作没有明确的顺序
+4.  Actor由标识和当前行为描述
+5.  Actor可能被分成原始（primitive）和非原始（non primitive）类别
+
+一个Actor收到其他Actor的信息后，它可以根据需要作出各种相应。消息的类型可以是任意的，消息的内容也可以是任意的。
+
+一个Actor如何处理多个Actor的请求呢？它先建立一个消息队列，每次收到消息后，就放入队列，而它每次也从队列中取出消息体来处理。通常我们都使得这个过程是循环的。让Actor可以时刻处理发送来的消息。
+
+每一个actor都会有一个监督者，那就是创建这些actor的那个actor。
+
+简单示例代码：
+
+    import actors._, Actor._
+    
+    /*
+     * Author:ShiYang
+     * Blog：http://shiyangxt.cnblogs.com
+     * */
+    object SharedDataStyle {
+      case class Add(number: Int)
+      case class GetResult(sender: Actor)
+    
+      class AddActor extends Actor {
+        override def act(): Unit = process(0)
+        def process(value: Int): Unit = {
+          reactWithin(500) {
+            case Add(number) => process(value + number)
+            case GetResult(a) => a ! value; process(value)
+            case _ => process(value)
+          }
+        }
+      }
+    
+      def main(args: Array[String]): Unit = {
+        val addActor = new AddActor
+        addActor.start()
+        addActor ! Add(1)
+        addActor ! Add(2)
+        addActor ! Add(3)
+        addActor ! GetResult(self)
+        receiveWithin(1000) {
+          case result => println("Total is " + result)
+        }
+      }
+    }
+
 
 
 ## eclipse

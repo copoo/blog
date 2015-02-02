@@ -1,0 +1,36 @@
+# BH
+
+<https://github.com/sequenceiq/docker-ambari>
+
+!!!
+<http://wenku.baidu.com/link?url=qM7BirJ9fCT_klsF6AyEGhvPfPZpCgSYzcXwpqzRHCR_zWy-M4gNA5n3NwENKqAaVtIPFFT0thnBiV0tgOWDdherXov45y3sTI3UHWYpFFu>
+
+dockerui <http://liubin.org/2014/02/18/dockerui-web-based-docker-management-tool/>
+
+docker run -d -P -h amb0.mycorp.kom -e KEYCHAIN=<keychain@email> --name amb0  sequenceiq/ambari --tag ambari-server=true
+
+
+上传自己的ssh pub文件
+
+	curl -s ssh.keychain.io/<email>/upload | bash
+
+
+	docker run -d -P -h amb0.mycorp.kom --name amb0  sequenceiq/ambari --tag ambari-server=true
+
+	docker run -e BLUEPRINT=single-node-hdfs-yarn --link amb0:ambariserver -t --rm --entrypoint /bin/sh sequenceiq/ambari-shell -c /tmp/install-cluster.sh
+
+	docker run -d -p 8080 -h amb0.mycorp.kom --name amb0 ambari-stack --tag ambari-server=true
+	docker run -d -P -h amb0.mycorp.kom --name=zgy1 sequenceiq/ambari --tag ambari-server=true
+
+	--tag ambari-server=true表示该container上运行ambari-server
+
+	sudo docker run -d -P -h amb1.mycorp.kom --name=zgy5 --entrypoint=/usr/local/serf/bin/start-serf-agent.sh sequenceiq/ambari  -e SERF_JOIN_IP=172.17.0.4 --dns=127.0.0.1 --log-level debug
+
+	docker run -i -t CONTAINER_NAME /bin/bash
+
+
+
+
+### 参考
+
+1. 如何让docker以daemon方式运行/bin/bash <http://segmentfault.com/q/1010000000424935>

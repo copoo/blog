@@ -1,5 +1,7 @@
 # node.js
 
+[NodeJs入门](http://www.nodebeginner.org/index-zh-cn.html)，简单易上手
+
 [NodeJS开发环境配置](http://www.cnblogs.com/Irving/p/3634232.html)
 
 [WebStorm 有哪些过人之处](http://www.zhihu.com/question/20936155)
@@ -13,3 +15,12 @@ API官方文档： <http://nodejs.org/api/http.html>
 [express的基本配置项](http://www.ituring.com.cn/article/54974)
 
 [AngularJS最理想开发工具WebStorm](http://blog.fens.me/angularjs-webstorm-ide/)
+
+
+## 特性
+
+1.  Node.js是单线程的。它通过事件轮询（event loop）来实现并行操作。尽可能的使用“非阻塞操作”
+
+
+
+[Node.js 框架比较: Express vs. Koa vs. Hapi](http://segmentfault.com/blog/livoras/1190000002421718)

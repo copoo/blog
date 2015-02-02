@@ -16,24 +16,17 @@
 	# 安装你想要的组件
 	pip install thrift
 
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
 [debug方式](http://www.ibm.com/developerworks/cn/linux/l-cn-pythondebugger/)
 
 文档查看: python -c "print dir(str)"	列出全部str的方法
 
 
-=======
->>>>>>> 4f85ec5a81000f3a1ba65b39c82c4e7bd9d2e0d5:blogs/blogs/编程语言/Python.md
 教程：
 	
 <http://woodpecker.org.cn/diveintopython/native_data_types/index.html> 深入Python
+
 <http://www.tsnc.edu.cn/tsnc_wgrj/doc/python/basic.htm> Python基础
 
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
-**不包含函数**
-
-=======
->>>>>>> 4f85ec5a81000f3a1ba65b39c82c4e7bd9d2e0d5:blogs/blogs/编程语言/Python.md
 ## 通用知识
 	
 *   头
@@ -60,10 +53,7 @@
 
 [谷歌命名规范](http://google-styleguide.googlecode.com/svn/trunk/pyguide.html)
 
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
 *   不要混用制表符和空格
-=======
->>>>>>> 4f85ec5a81000f3a1ba65b39c82c4e7bd9d2e0d5:blogs/blogs/编程语言/Python.md
 *	函数名应该为小写，可以用下划线：this_is_a_function
 *	在全局变量上加一个前导的下划线：_global_various
 *	变量名全部小写，由下划线连接各个单词：this_is_a_various
@@ -72,11 +62,6 @@
 *	一个前导下划线，表示非公有:_
 *	一个后缀下划线，避免关键字冲突：None_
 
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
-=======
-
-	
->>>>>>> 4f85ec5a81000f3a1ba65b39c82c4e7bd9d2e0d5:blogs/blogs/编程语言/Python.md
 ## 变量
 
 ###	类型
@@ -84,7 +69,6 @@
 *   没有显式类型声明
 
         bool, int, float, long
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
 
 *   内建类型
     *   numerics：int, float, long, complex
@@ -119,10 +103,9 @@
     *   classes
     *   instances
     *   exceptions
-=======
+
 *   常用类型有
     *   数字
->>>>>>> 4f85ec5a81000f3a1ba65b39c82c4e7bd9d2e0d5:blogs/blogs/编程语言/Python.md
     *   string
     *   tuple ()
     *   set ()
@@ -131,7 +114,6 @@
 *	None
 *	True, False
 
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
 *   布尔操作：not and or
 *   比较操作
 
@@ -141,7 +123,7 @@
 
 	sStr1 = sStr1[::-1]		翻转字符串
 	a='a,bb,ccc'
-=======
+
 ### 类型转换
 
 *   int([x[, base]])
@@ -165,7 +147,6 @@
     endswith('w'):boolean
     'a' in 'cdab'
     replace
->>>>>>> 4f85ec5a81000f3a1ba65b39c82c4e7bd9d2e0d5:blogs/blogs/编程语言/Python.md
 
 <https://docs.python.org/2/library/stdtypes.html>
 
@@ -179,20 +160,14 @@
 #### 数组 [] List
 
 *   li = ["a", "b", "mpilgrim", "z", "example"]
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
-=======
 *   li[0] = 'a'
 *   li[-1] = 'example'
 *   li[1:3] = ['b', 'mpilgrim']
->>>>>>> 4f85ec5a81000f3a1ba65b39c82c4e7bd9d2e0d5:blogs/blogs/编程语言/Python.md
 *   li.append('new')
 *   li.insert(2, 'new')
 *   li.extend(['bb','aa'])	连接两个list	
 *   li.index('new')
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
-=======
 *   'new' in li
->>>>>>> 4f85ec5a81000f3a1ba65b39c82c4e7bd9d2e0d5:blogs/blogs/编程语言/Python.md
 *   li.remove('z')
 *   li.pop()
 *   li = li + ['aaa','bbb']
@@ -203,11 +178,7 @@
 		[v for v in vs if v > 2]
 		[v for vs in vvs for v in vs] 可迭代多次
 
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
-=======
-		
 
->>>>>>> 4f85ec5a81000f3a1ba65b39c82c4e7bd9d2e0d5:blogs/blogs/编程语言/Python.md
 #### Set
 
 *   add(x)
@@ -215,7 +186,6 @@
 *   pop()
 *   remove(x)	移除，如不存在，抛出异常
 *   discard(x)	丢弃，不会抛出报错		
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
 *   x in s
 *   支持特别的符号操作
     *   <   set < other
@@ -224,7 +194,6 @@
     *   set & other         交集
     *   set - other         差集
     *   ^                   全集 - 交集
-=======
 *   has(x)
 *   x in s
 *   set < other 
@@ -234,7 +203,6 @@
 *   set | other 
 *   set & other
 *   set - other
->>>>>>> 4f85ec5a81000f3a1ba65b39c82c4e7bd9d2e0d5:blogs/blogs/编程语言/Python.md
 	
 #### Dictionary {}
 
@@ -265,7 +233,6 @@
 
 	dict([(v, v*10) for v in L])
 
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
 #### 文件对象 File
 
 *   open
@@ -323,9 +290,6 @@ Callable类型的对象
     func = f1(arg)(f2(func))
 
 
-
-=======
->>>>>>> 4f85ec5a81000f3a1ba65b39c82c4e7bd9d2e0d5:blogs/blogs/编程语言/Python.md
 ### 内置变量、
 
 *	\_\_main\_\_
@@ -580,8 +544,6 @@ function fun_name(arg1, *arg2, **arg3):
 
 所有的模块都有一个内置属性 __name__。一个模块的 __name__ 的值取决于您如何应用模块。如果 import 一个模块，那么模块__name__ 的值通常为模块文件名，不带路径或者文件扩展名。但是您也可以像一个标准的程序样直接运行模块，在这 种情况下, __name__ 的值将是一个特别缺省"__main__"。
 
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
-=======
 ## python安装
 
 	wget http://www.python.org/ftp/python/2.7.3/Python-2.7.3.tgz
@@ -777,10 +739,8 @@ stdin, stdout, stderr在Python中无非都是文件属性的对象，
 			7 tm_yday range [1, 366] 
 			8 tm_isdst 0, 1 or -1; see below 
 
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
+
     "%Y-%m-%d %H:%M:%S"
-=======
->>>>>>> 4f85ec5a81000f3a1ba65b39c82c4e7bd9d2e0d5:blogs/blogs/编程语言/Python.md
 
 ### 文件和目录
 	
@@ -972,12 +932,6 @@ stdin, stdout, stderr在Python中无非都是文件属性的对象，
 	bisect.insort_left(a,x, lo=0, hi=len(a))	在有序列表a中插入x。和a.insert(bisect.bisect_left(a,x, lo, hi), x) 的效果相同。
 	bisect.insort_right(a,x, lo=0, hi=len(a))	和insort_left类似，但如果x已经存在，在其右边插入。
 	bisect.insort(a, x,lo=0, hi=len(a))			同insort_right
-
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
-### [正则 regex](http://www.w3cschool.cc/python/python-reg-expressions.html)
-=======
-### [正则](http://www.w3cschool.cc/python/python-reg-expressions.html)
->>>>>>> 4f85ec5a81000f3a1ba65b39c82c4e7bd9d2e0d5:blogs/blogs/编程语言/Python.md
 	
 	import re
 
@@ -998,19 +952,14 @@ stdin, stdout, stderr在Python中无非都是文件属性的对象，
 	re.search(pattern, string, flags=0)	扫描字符串，找到这个 RE 匹配的位置
     re.sub(pattern, repl, string, max=0)   替换字符串中的匹配项,返回新的字符串
 
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
     MatchObject = p.match( 'tempo')
 	p.findall(str)	找到 RE 匹配的所有子串，并把它们作为一个列表返回
 	p.finditer(str)	找到 RE 匹配的所有子串，并把它们作为一个迭代器返回
-		
-=======
     m = p.match( 'tempo')
 	p.findall(str)	找到 RE 匹配的所有子串，并把它们作为一个列表返回
 	p.finditer(str)	找到 RE 匹配的所有子串，并把它们作为一个迭代器返回
-		
-    
+	
 
->>>>>>> 4f85ec5a81000f3a1ba65b39c82c4e7bd9d2e0d5:blogs/blogs/编程语言/Python.md
 	MatchObject可以访问：
 	group()	返回被 RE 匹配的字符串
 	start()	返回匹配开始的位置
@@ -1173,11 +1122,6 @@ import atexit
     exec()
     eval()
 
-<<<<<<< HEAD:blogs/blogs/编程语言/Python.md
-=======
-
-
->>>>>>> 4f85ec5a81000f3a1ba65b39c82c4e7bd9d2e0d5:blogs/blogs/编程语言/Python.md
 ----------
 
 # tornado  Web Service

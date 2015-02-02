@@ -26,7 +26,7 @@
 传递函数给spark，有2个方法：
 
 1.  匿名函数
-2.  全局单例对象的静态方法 
+2.  全局单例对象的静态方法
 
 #### 数据：RDD
 
@@ -44,12 +44,15 @@
     All transformations in Spark are lazy. The transformations are only computed when an action requires a result to be returned to the driver program
 
     *   map(func)
+    *   mapWith()
     *   mapValues(func):key不变，只对value进行f操作。
-    *   filter(func)    *   
+    *   mapPartitions(func) : 类似map，在每个Partitions上map
+    *   mapPartitionsWithIndex(func) : 类上，带了Partitions的序号值       
     *   flatMap(func) ： 类似scala的flatMap
     *   flatMapValues
-    *   mapPartitions(func) : 类似map，在每个Partitions上map
-    *   mapPartitionsWithIndex(func) : 类上，带了Partitions的序号值
+    *   filter(func)
+    *   filterWith[A:ClassTag](constructA:Int => A)(p: (T, A) => Boolean )
+: RDD[T]：第一个函数在partition中仅执行一次
     *   sample(withReplacement, fraction, seed)：随机数据
     *   keys:返回key数据集合 map(._1)
     *   values:返回value数据集合 map(._2)
@@ -85,6 +88,7 @@
     *   reducePartition(func) ： 在各worker上对其分配的Partition的数据进行计算
     *   reduceByKeyLocally(func)：将RDD[K,V]转化成drvier上的Map[K,V]。先在各分区上进行map合并(各分区就一个map)，然后将各分区的map传到driver进行map的两两合并得到最终结果。
     *   collect(),toArray() ： 纯粹的返回数据到driver
+    *   collect [U: ClassTag ](f: PartialFunction [T, U]): RDD [U] ?
     *   collectAsMap：将RDD转成Map。先调用collect()将kvparis汇总到driver上，然后将kvpairs放到Map中。遇到相同key时后来的value会把之前的value给覆盖，如果需要将value进行合并，则用reduceByKeyLocally。
     *   fold
     *   aggregate
@@ -142,7 +146,7 @@
 
     缓存使用LRU自动移除，或者RDD.unpersist()主动移除。
 
-5. 变量共享
+5.  变量共享
 
     These variables are copied to each machine, and no updates
 
@@ -154,6 +158,18 @@
 
             val accum = sc.accumulator(0, "My Accumulator")
             sc.parallelize(Array(1, 2, 3, 4)).foreach(x => accum += x)
+
+
+6.  checkpoint
+
+    需要先设置hdfs存储目录：spark.setCheckpointDir(/path/...)
+
+    调用 RDD.checkpoint() mark，在执行action时才会真正的CP到文件系统。SparkContext.checkpointFile用于读取文件。因为sc.checkpointFile(path)是private[spark]的，所以该类要写在自己工程里新建的package org.apache.spark中。
+
+    1.  需要在Job被执行前被mark,
+    2.  最好选择persist这个RDD, 否则在存CP文件时需要重新computeRDD内容
+    3.  当RDD被CP后, 所有dependencies都会被清除
+    4.  checkpoint会将结果写到hdfs上，当driver 关闭后数据不会被清除
 
 
 #### 操作的本质
@@ -235,6 +251,10 @@
     export MAVEN_OPTS="-Xmx2g -XX:MaxPermSize=512M -XX:ReservedCodeCacheSize=512m"
     mvn -Pyarn-alpha -Dhadoop.version=2.0.0-cdh4.2.1 -DskipTests clean package
 
+    ./make-distribution.sh --tgz --skip-java-test -Pyarn-alpha -Dhadoop.version=2.0.0-cdh4.2.1
+
+    ./make-distribution.sh --name 2.4.1 --with-tachyon --tgz -Pspark-ganglia-lgpl -Pyarn -Pkinesis-asl -Phive-0.13.1 -Phive-thriftserver -Phadoop-2.4 -Djava.version=1.6 -Dhadoop.version=2.4.1 -DskipTests
+
 打包后的文件在每个子项目的 target 目录中。编译后就可以使用了。其中在 assembly 项目，它把spark需要的class集合成一个大的jar包，方便转移和使用。
 
 ## 配置
@@ -267,11 +287,18 @@ slaves
 
 ## 启动
 
-以独立方式启动。
+### 以独立方式启动
+
+    独立方式部署，需要在一台机器上配置好后，在所有机器上分发。
+    
+    1.  需要配置好conf中的spark-env.sh
+    2.  需要配置好conf中的spark-default.conf
 
     sbin/start-all
 
-以yarn方式：
+### 以yarn方式启动
+
+<http://blog.csdn.net/lsshlsw/article/details/41787537>
 
     #!/usr/bin/env exit 1
     #SPARK_YARN_USER_ENV="JAVA_HOME=/jdk64,FOO=bar"
@@ -288,6 +315,15 @@ slaves
     -Dclient.encoding.override=UTF-8 -Dfile.encoding=UTF-8 \
     -Duser.language=zh -Duser.region=CN" 
     
+    # 下面这些系统变量，也可以在 spark-env.sh 中定义
+    # 支持LZO    
+    export SPARK_CLASSPATH=$SPARK_CLASSPATH:/usr/lib/hadoop/lib/hadoop-lzo-cdh4-0.4.15-gplextras.jar
+    export SPARK_SUBMIT_LIBRARY_PATH=$SPARK_LIBRARY_PATH:/usr/lib/hadoop/lib/native
+    SPARK_LIBRARY_PATH=$SPARK_LIBRARY_PATH:/usr/lib/hadoop/lib/native
+    JAVA_LIBRARY_PATH=$JAVA_LIBRARY_PATH:/usr/lib/hadoop/lib/native
+    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/hadoop/lib/native
+
+
     # Options read in YARN client mode
     export HADOOP_CONF_DIR=/etc/hadoop/conf
     #export SPARK_EXECUTOR_INSTANCES=5
@@ -322,7 +358,28 @@ slaves
       --output=hdfs://$mycluster/user/zhaigy/waup_spark/out/ \
       --confPath=hdfs://$mycluster/user/zhaigy/waup_spark/conf/waup_conf.conf
 
-mesos运行，不是通过命令启动的。
+### spark shell
+
+    spark shell 连接到一个存在的cluster
+
+MASTER=spark://localhost:7077 ./spark-shell
+
+    sc是在进入spark shell 时候创建一个spark content
+
+### 重要的参数
+
+1.  spark.yarn.executor.memoryOverhead ： 非堆内存
+
+    spark不允许用户通过JavaOpt指定堆内存。只能通过指定executor堆内存和非堆内存。spark用这两者的和，来向yarn申请内存资源。    
+
+2.  spark.yarn.historyServer.address：？
+
+
+### 支持LZO
+
+正常的安装Hadoop的LZO支持，然后
+
+
 
 启动后，你可以在浏览器中访问：http://hadoop1:8081
 
@@ -471,6 +528,50 @@ mesos运行，不是通过命令启动的。
     
         ssc.checkpoint(hdfsPath)
         dstream.checkpoint(checkpointInterval)
+
+
+## Spark使用Kryo序列化
+
+conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+conf.set("spark.kryo.registrator", "mypackage.MyRegistrator")
+
+或者重载，把自己声明的，用于RDD和广播，缓存等相关的类都注册。示例代码如下：
+
+    class MyRegistrator extends KryoRegistrator {
+      override def registerClasses(kryo: Kryo) {
+        kryo.register(classOf[InputLogs])
+        kryo.register(classOf[Parameters])        
+      }
+    }
+    
+    object MyRegistrator extends Logging {
+      def useKryo(conf: SparkConf, registor: KryoRegistrator) {
+        conf.set("spark.kryo.registrator", registor.getClass.getCanonicalName)
+      }
+      def useKryo(conf: SparkConf) {
+        log.info("use kryo serializer")
+        conf.set("spark.kryo.registrator", classOf[MyRegistrator].getCanonicalName)
+      }
+    }
+
+如果你不注册你的类，Kryo依然可以工作，但是它会对每个对象都存储全类名
+
+## spark + parquet
+
+<https://github.com/Arnonrgo/spark-parquet-example/blob/master/src/test/scala/com/rgoarchitects/example/tests/CsvToParquetSample.scala>
+
+这个示例挺清楚：<https://github.com/adobe-research/spark-parquet-thrift-example>
+
+
+需要：
+  
+    $CDH_BASE/lib/hive/lib/libthrift*jar
+
+
+## 一些问题
+
+### 大数据下，Lost executor on YARN
+
 
 
 ## 分析文章

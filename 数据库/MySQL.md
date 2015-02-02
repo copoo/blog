@@ -146,3 +146,7 @@ CREATE DATABASE "mydd" ENGINE = InnoDB
 ## Bin日志删除
 
     PURGE MASTER LOGS BEFORE DATE_SUB( NOW( ), INTERVAL 3 DAY);
+
+    [mysql的binlog日志删除与限制大小](http://www.111cn.net/database/mysql/63285.htm)
+
+    在配置文件中：    expire_logs_days=3

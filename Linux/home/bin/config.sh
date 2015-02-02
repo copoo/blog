@@ -58,7 +58,7 @@ if [ "X$__CONFIG__" == "X" ]; then
   # no edit
   # --------------------------------------------------
   #SSH="ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p $SSH_PORT" 
-  SSH="ssh -o StrictHostKeyChecking=no -p $SSH_PORT" 
+  SSH="ssh -o ConnectTimeout=3 -o ConnectionAttempts=3 -o PasswordAuthentication=no -o StrictHostKeyChecking=no -p $SSH_PORT" 
   # --------------------------------------------------
   # 基础设置
   # --------------------------------------------------

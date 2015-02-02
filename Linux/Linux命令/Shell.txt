@@ -394,6 +394,7 @@ http://space.itpub.net/23524877/viewspace-630614
 替换
     
     ${a[@]/3/100}		${数组名[@或*]/查找字符/替换字符} 该操作不会改变原先数组内容 ，返回新的数组
+
     把字符串分割为数组：
     a="one,two,three,four"
     要将$a分割开，可以这样：
@@ -422,8 +423,23 @@ http://space.itpub.net/23524877/viewspace-630614
     可以这样转换为数组：a=($(seq  1 3 10))
     可以这样生成连续相同的字符串：seq -s '#' 30 | sed -e 's/[0-9]*//g'
 
+### MAP
 
-通配符
+You declare an associative array by doing:
+
+	declare -A animals
+You can fill it up with elements using the normal array assignment operator:
+
+	animals=( ["moo"]="cow" ["woof"]="dog")
+Or merge them:
+
+	declare -A animals=( ["moo"]="cow" ["woof"]="dog")
+Then use them just like normal arrays.  `"${animals[@]}"` expands the values, `"${!animals[@]}"` (notice the !) expands the keys. Don't forget to quote them:
+
+	echo "${animals["moo"]}"
+	for sound in "${!animals[@]}"; do echo "$sound - ${animals["$sound"]}"; done
+
+## 通配符
 
 	*
 	?
@@ -432,7 +448,7 @@ http://space.itpub.net/23524877/viewspace-630614
 	[c1-c2]					匹配 c1-c2 中的任意单一字符 如：[0-9] [a-z]
 	{string1,string2,...}	匹配 sring1 或 string2 (或更多)其一字符串
 	
-元字符	Meta
+## 元字符	Meta
 
 	IFS	由 <space> 或 <tab> 或 <enter> 三者之一组成(我们常用 space )。
 	CR	由 <enter> 产生。
@@ -450,7 +466,7 @@ http://space.itpub.net/23524877/viewspace-630614
 	!	执行 history 列表中的命令。*
 	
 
-函数
+## 函数
 
 	[ function ] funname [()]
 	{
@@ -718,15 +734,8 @@ Linux shell 脚本实现tcp/upd协议通讯（重定向应用）
     smartctl --all /dev/sda
     tr A-Z a-z
     alias "have_this=true"
-    	alias格式:alias name text
-    	在text中要得到用户传递的参数可以使用以下方式
-    	/!:1    表示第1个参数
-    	/!:2*  表示第2个及余下的所有参数
-    	/!*      表示所有参数
-    	如:alias test_val '@ z = (/!*) ;echo $z'
-    	test_var  1 + 1
-    	得到2
     unalias have_this
+    alias cd='test() { cd $1; ls;};test'
     fuser	可以关闭指定端口对应的进程，可以看打开文件的进程
     nc		网络工具，可以封住指定端口，可以阅读端口信息
     exec
@@ -786,6 +795,7 @@ Linux shell 脚本实现tcp/upd协议通讯（重定向应用）
 	curl
 	wget					http://baike.baidu.com/view/1312507.htm
 	dmesg					开机信息,dmesg用于检测和控制内核环缓冲。程序用来帮助用户了解系统的启动信息。
+    script                  记录命令，或者提供假tty，对于sudo必须使用tty的，有用。
 		
 内核相关
 
@@ -906,3 +916,24 @@ tcpdump
     /etc/rc.d/init.d/network restart
 
     echo abc | sudo tee -a /abc >/dev/null
+
+## 编程框架
+
+<http://dberkholz.com/2011/04/07/bash-shell-scripting-libraries/>
+
+- Marco’s Bash Functions Library (mbfl)
+- Bash Shell Function Library (bsfl)
+- Bashinator: Bash Shell Script Framework (by our own wschlich)
+- shesfw: shell script framework tool
+- Wicked Cool Shell Scripts library (from the book)
+- UNIX Power Tools library (from the book)
+- Portable Shell Programming (from the book)
+- Learning the bash shell (from the book)
+- Bash Cookbook (from the book)
+- Classic Shell Scripting (from the book)
+- shunit2: A unit-test framework
+- log4sh: A flexible logging framework
+- libbash: Enables creation of dynamic-like shared libraries
+- bashworks: Framework depending on bash-4 or newer
+- bfw: Bash FrameWork (Harvard Neuroinformatics)
+- rerun: Turns loose shell scripts into modular automation
