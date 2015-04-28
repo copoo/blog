@@ -150,3 +150,15 @@ CREATE DATABASE "mydd" ENGINE = InnoDB
     [mysql的binlog日志删除与限制大小](http://www.111cn.net/database/mysql/63285.htm)
 
     在配置文件中：    expire_logs_days=3
+
+
+## jdbc:mysql
+
+    Class.forName("com.mysql.jdbc.Driver").newInstance(); //MYSQL驱动
+    con = DriverManager.getConnection("jdbc:mysql://127.0.0.1:3306/test", "root", "root"); //链接本地MYSQL
+
+    jdbc:mysql://[host:port],[host:port].../[database][?propertyName1][=propertyValue1][&propertyName2][=propertyValue2]...
+
+    autoReconnect=false
+    user=
+    password=

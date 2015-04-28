@@ -1,5 +1,15 @@
 # node.js
 
+
+## 安装
+
+1.  epel源
+2.  yum install -y nodejs
+3.  npm install -g n
+4.  n stable
+
+
+
 [NodeJs入门](http://www.nodebeginner.org/index-zh-cn.html)，简单易上手
 
 [NodeJS开发环境配置](http://www.cnblogs.com/Irving/p/3634232.html)
@@ -24,3 +34,7 @@ API官方文档： <http://nodejs.org/api/http.html>
 
 
 [Node.js 框架比较: Express vs. Koa vs. Hapi](http://segmentfault.com/blog/livoras/1190000002421718)
+
+## koa
+
+## 

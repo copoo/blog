@@ -568,6 +568,43 @@ conf.set("spark.kryo.registrator", "mypackage.MyRegistrator")
     $CDH_BASE/lib/hive/lib/libthrift*jar
 
 
+## spark sql
+
+spark sql支持用户接口，不需要写任何代码，使用sql就可以。
+
+1. thriftserver
+
+    Thrift JDBC/ODBC server implemented here corresponds to the HiveServer2 in Hive 0.12.
+
+        export HIVE_SERVER2_THRIFT_PORT=<listening-port>
+        export HIVE_SERVER2_THRIFT_BIND_HOST=<listening-host>
+        ./sbin/start-thriftserver.sh    --help
+            --hiveconf hive.server2.thrift.port=<listening-port> \
+            --hiveconf hive.server2.thrift.bind.host=<listening-host> \
+    
+        beeline> !connect jdbc:hive2://localhost:10000
+        在非安全模式下，用户名随便，密码空格或者随便
+
+    把hive-site.xml放到conf目录可以快速配置完成hive
+
+2. sql cli 
+
+    相当于快速运行 hive metastore的本地模式并提供sql查询的工具
+
+        ./bin/spark-sql --help
+
+3.  sql
+
+        SET spark.sql.shuffle.partitions=10;
+
+        SELECT page, count(*) c
+        FROM logs_last_month_cached
+        GROUP BY page ORDER BY c DESC LIMIT 10;
+        
+        CACHE TABLE logs_last_month;
+        UNCACHE TABLE logs_last_month;
+
+
 ## 一些问题
 
 ### 大数据下，Lost executor on YARN
