@@ -1,218 +1,323 @@
-Perl½Ì³Ì
-========
+# Perlæ•™ç¨‹
 
+## å®—æ—¨
 
-°²×°Ä£¿é
-	yum install perl-JSON
+*   ä¸€ä»¶äº‹æƒ…å¯ä»¥ä½¿ç”¨è®¸å¤šæ–¹æ³•æ¥å®Œæˆ
+*   èƒ¶æ°´è¯­è¨€
+
+### åŸºç¡€ä¿¡æ¯ 
+
+    perldoc	å‘½ä»¤ï¼Œç”¨äºè·å–perlæ–‡æ¡£ï¼Œperldoc perl
+    perldoc -tf print
+
+    #!/usr/bin/perl
+    use strick;
+
+## å®‰è£…æ¨¡å—
+
+    yum install perl-JSON
 	
+## ç¼–è¯‘
 
-	±äÁ¿
-	----
-		Õı³£±äÁ¿
-			$var	
+    
 
-		ÌØÊâ±äÁ¿
-			$_	Ä¬ÈÏÖµ±äÁ¿
-			$¡±
-			$/
-			$2
-			$$
-		Êı×é
-		×Ö·û´®
-		
-	Óï·¨
-	----
-		if () {} else {}
-		while () {}
-		for () {}
-		last	#break
-		next	#continue
-		
-	ÎÄ¼ş
-	----
-		open
-		close
+## ç¼–ç¨‹
+
+### æ³¨é‡Š
+
+    #  è¿™æ˜¯æ³¨é‡Š
+
+### å˜é‡
+
+    å˜é‡ï¼Œæ— æ˜ç¡®ç±»å‹ï¼Œå¯å˜ç±»å‹
+
+    $   å˜é‡å‰ç¼€
+    @   æ•°ç»„å‰ç¼€
+    %   å“ˆå¸Œå‰ç¼€
+
+	ç‰¹æ®Šå˜é‡
+		$_	é»˜è®¤å€¼å˜é‡
+		$â€
+		$/
+		$2
+		$$
+	æ•°ç»„
+	å­—ç¬¦ä¸²
+
+    åˆ—è¡¨ å’Œ æ•°ç»„
+    qw
+    (5, 'apple', $x. 3.14159)
+    ( 1 .. 1 0 )
+    ï¼ boy=qw(Greg Peter Bobby);
+    $boy[0];
+    @bogy[1,2];	æ•°ç»„åˆ†ç»„
+    ($a, $b, $c)=qw (apples oranges bananas);
+    $#	è¿”å›æ•°ç»„ä¸­æœ€åä¸€ä¸ªæœ‰æ•ˆçš„ç´¢å¼•å€¼
+    
+    pop å¼¹å‡ºæœ€åé¢çš„ä¸€ä¸ªå…ƒç´ 
+    push(@a,$e) å‹å…¥ä¸€ä¸ªå…ƒç´ åˆ°æœ€åé¢
+    push(@a,@e) å‹å…¥ä¸€ä¸ªå…ƒç´ ç»„çš„å…¨éƒ¨å…ƒç´ åˆ°æœ€åé¢
+    shift   å¼¹å‡ºæœ€å‰é¢çš„ä¸€ä¸ªå…ƒç´ 
+    unshift
+
+    foreach $film (@movies) {
+    }
+
+    %hash = ('abc'=>'val',"def"=>"ccd")
+    foreach $film (keys %movies) {
+    }
+
+### æµç¨‹æ§åˆ¶
 	
-	º¯Êı
-	----
-		srand()
-		rand(200)
+*   æ•°å­—0ä¸ºå‡ã€‚
+*   ç©ºçš„å­—ç¬¦ä¸²ï¼ˆâ€œâ€ï¼‰å’Œå­—ç¬¦ä¸²â€œ0â€ä¸ºå‡ã€‚
+*   æœªå®šä¹‰å€¼u n d e fä¸ºå‡ã€‚
+*   å…¶ä»–ä¸œè¥¿å‡ä¸ºçœŸã€‚
 
-		srand; #ÒªÏÈĞû¸æsrandº¯Êı£¬²ÅÄÜ²úÉúËæ»úÊıµÄĞ§¹û
-		$int=rand(10); #$intµÄÖµ»á´óÓÚ0¶øÇÒĞ¡ÓÚ10Èç¹ûÏ£Íû²úÉúµÄÂÒÊıÊÇÕûÊıµÄ»°£¬¾ÍÒªÔÙ¼ÓÉÏint #Õâ¸öº¯Êı
-		$int=int(rand(10)); #$intµÄÖµÊÇÒ»¸öÕûÊı£¬ÇÒÖµÔÚ0ºÍ9Ö®¼ä
+---
 
-	Ê¾Àı
-	----
-		#print "start"."\n";
-		open(IN,"tmp.f2.nbr.2.txt");
-		chomp(@array = <IN>);
-		close(IN);
-		#print $array[2]."\n";
-		#exit(0);
-		open(IN,"tmp.f1.nbr.2.txt");
-		$n=0;
-		while($line=<IN>){
-		  chomp($line);
-		  #$line='000913-8048652';
-		  #print $line."\n";
-		  $r = &binarySearch(\@array,$line);
-		  #print $r."\n";
-		  if( $r < 0) {
-			print $line."\n";
-			#print "not find:".$line."\n";
-		  }
-		  $n=$n+1;
-		  if($n % 1000 == 0) {
-			#last;
-			#print $n."\n";
-		  }
+	if () {} elsif {} else {}
+    xxxx if ()
+	while () {}
+	for () {}  ç±»ä¼¼Ck
+    foreach $var (@array) {}
+	last	#break
+	next	#continue
+    redo
+    exit
+    
+    è¯­å¥å—ï¼Œæ ‡ç­¾	MYBLOCK: { }
+		
+### æ–‡ä»¶
+
+	open
+	close
+
+    <=>	é£èˆ¹è¿ç®—ç¬¦	> =  <çš„ç»“åˆä½“
+    <>	è±å½¢è¿ç®—ç¬¦ï¼Œç”¨äºè¯»å–æ–‡ä»¶
+	
+### å‡½æ•°
+	
+    sub fun {
+    	@_
+    	return 
+    }
+    fun();
+    &fun();
+
+	srand()
+	rand(200)
+
+	srand; #è¦å…ˆå®£å‘Šsrandå‡½æ•°ï¼Œæ‰èƒ½äº§ç”Ÿéšæœºæ•°çš„æ•ˆæœ
+	$int=rand(10); #$intçš„å€¼ä¼šå¤§äº0è€Œä¸”å°äº10å¦‚æœå¸Œæœ›äº§ç”Ÿçš„ä¹±æ•°æ˜¯æ•´æ•°çš„è¯ï¼Œå°±è¦å†åŠ ä¸Šint #è¿™ä¸ªå‡½æ•°
+	$int=int(rand(10)); #$intçš„å€¼æ˜¯ä¸€ä¸ªæ•´æ•°ï¼Œä¸”å€¼åœ¨0å’Œ9ä¹‹é—´
+
+### ç¤ºä¾‹
+	
+	#print "start"."\n";
+	open(IN,"tmp.f2.nbr.2.txt");
+	chomp(@array = <IN>);
+	close(IN);
+	#print $array[2]."\n";
+	#exit(0);
+	open(IN,"tmp.f1.nbr.2.txt");
+	$n=0;
+	while($line=<IN>){
+	  chomp($line);
+	  #$line='000913-8048652';
+	  #print $line."\n";
+	  $r = &binarySearch(\@array,$line);
+	  #print $r."\n";
+	  if( $r < 0) {
+		print $line."\n";
+		#print "not find:".$line."\n";
+	  }
+	  $n=$n+1;
+	  if($n % 1000 == 0) {
+		#last;
+		#print $n."\n";
+	  }
+	}
+	close(IN);
+
+
+	#äºŒåˆ†æŸ¥æ‰¾ç®—æ³•
+	sub binarySearch {
+		($list, $query) = @_;
+		($low, $high)   = ($[, $#$list);
+		#print "[$low,$high] $query\n";
+		#return -1;
+		
+		while ( $low <= $high ) {
+			my $try = int( ($low + $high) / 2 );
+			#print "[$low,$high][$try] $list->[$try] vs $query\n";
+
+			# note: "lt" and "gt" because we are comparing strings
+			# if we were comparing numbers then we would use "<" and ">"
+			$list->[$try] lt $query and do { $low  = $try + 1; next };
+			$list->[$try] gt $query and do { $high = $try - 1; next };
+
+			return $try; # By this point it must be equal!
 		}
-		close(IN);
+		return -$try-1; # not find
+	}
 
 
-		#¶ş·Ö²éÕÒËã·¨
-		sub binarySearch {
-			($list, $query) = @_;
-			($low, $high)   = ($[, $#$list);
-			#print "[$low,$high] $query\n";
-			#return -1;
-			
-			while ( $low <= $high ) {
-				my $try = int( ($low + $high) / 2 );
-				#print "[$low,$high][$try] $list->[$try] vs $query\n";
+## è°ƒè¯•
 
-				# note: "lt" and "gt" because we are comparing strings
-				# if we were comparing numbers then we would use "<" and ">"
-				$list->[$try] lt $query and do { $low  = $try + 1; next };
-				$list->[$try] gt $query and do { $high = $try - 1; next };
+    perl -d ç¨‹åºæ–‡ä»¶	å¯ä»¥è¿›å…¥è°ƒè¯•æ–¹å¼è¿è¡Œï¼Œæ¯æ¬¡è¿è¡Œä¸€æ¡è¯­å¥
+    h [cmd]	æ˜¾ç¤ºå¸®åŠ©
+    n	è¿è¡Œä¸‹ä¸€æ¡è¯­å¥
+    print å˜é‡	æ‰“å°å˜é‡
+    l	åˆ—å‡ºç¨‹åºä¸‹é¢10è¡Œ
+    b è¡Œå·	è®¾ç½®æ–­ç‚¹
+    d è¡Œå·	å–æ¶ˆæ–­ç‚¹
+    c	è¿è¡Œç›´åˆ°æ–­ç‚¹æˆ–ç¨‹åºæœ«å°¾
+    q	é€€å‡º
 
-				return $try; # By this point it must be equal!
-			}
-			return -$try-1; # not find
-		}
+## æ­£åˆ™
 
-Perl¼òµ¥½Ì³Ì
+    m/ /mgs
+    s///mgs
+    tr///
+    =~
+    !~
 
-====================================================================================================
-×ÚÖ¼
+## é›†åˆ
 
-Ò»¼şÊÂÇé¿ÉÒÔÊ¹ÓÃĞí¶à·½·¨À´Íê³É
-½ºË®ÓïÑÔ
-====================================================================================================
-ĞÅÏ¢
+æ•°ç»„éå†
 
-perldoc	ÃüÁî£¬ÓÃÓÚ»ñÈ¡perlÎÄµµ£¬perldoc perl
-perldoc -tf print
-#!/usr/bin/perl
-use strick;
-====================================================================================================
-µ÷ÊÔ
-perl -d ³ÌĞòÎÄ¼ş	¿ÉÒÔ½øÈëµ÷ÊÔ·½Ê½ÔËĞĞ£¬Ã¿´ÎÔËĞĞÒ»ÌõÓï¾ä
-h [cmd]	ÏÔÊ¾°ïÖú
-n	ÔËĞĞÏÂÒ»ÌõÓï¾ä
-print ±äÁ¿	´òÓ¡±äÁ¿
-l	ÁĞ³ö³ÌĞòÏÂÃæ10ĞĞ
-b ĞĞºÅ	ÉèÖÃ¶Ïµã
-d ĞĞºÅ	È¡Ïû¶Ïµã
-c	ÔËĞĞÖ±µ½¶Ïµã»ò³ÌĞòÄ©Î²
-q	ÍË³ö
-====================================================================================================
-Óï·¨
-----------------------------------------------
-±äÁ¿£¬ÎŞÃ÷È·ÀàĞÍ£¬¿É±äÀàĞÍ
-$
-@
-%
-ÌØÊâµÄ±êÁ¿£º$_ $0 $1 $2 @_ $$ $/ $^O 
-----------------------------------------------
-<=>	·É´¬ÔËËã·û	> =  <µÄ½áºÏÌå
-<>	ÁâĞÎÔËËã·û£¬ÓÃÓÚ¶ÁÈ¡ÎÄ¼ş
-----------------------------------------------
-if () {
-} else {
-}
+    for $one (@array) {
+        something
+    }
 
-xxxx if ();
-----------------------------------------------
-while
-for
-last next redo
-last ÍË³öµ±Ç°ÕıÔÚÔËĞĞµÄÑ­»·
-exit
-----------------------------------------------
-Óï¾ä¿é£¬±êÇ©	MYBLOCK: { }
-----------------------------------------------
-ÁĞ±í ºÍ Êı×é
-qw
-(5, 'apple', $x. 3.14159)
-( 1 .. 1 0 )
-£Àboy=qw(Greg Peter Bobby);
-$boy[0];
-@bogy[1,2];	Êı×é·Ö×é
-($a, $b, $c)=qw (apples oranges bananas);
-$#	·µ»ØÊı×éÖĞ×îºóÒ»¸öÓĞĞ§µÄË÷ÒıÖµ
-foreach $var (@array) {}
-----------------------------------------------
-ÕıÔò
-m/ /mgs
-s///mgs
-tr///
-=~
-!~
-----------------------------------------------
-% hash
-keys
-value
-exists
-----------------------------------------------
-sub fun {
-	@_
-	return 
-}
-fun();
-&fun();
-----------------------------------------------
-ÒıÓÃ
-&ab=\$ab
-$$ab
-----------------------------------------------
-Ä£¿é
-----------------------------------------------
-DBMÎÄ¼ş
+    @words = split(/ /, "all of ars")
 
-====================================================================================================
-º¯Êı
-print
-split
-join
-scalar
-sort	¿ÉÓÃÓï¾ä¿é
+    % hash
+    keys
+    value
+    exists
 
-open
-close
-chomp
+## è°ƒç”¨å­è¿›ç¨‹
 
-index
-rindex
-substr
+    system
 
-push
-pop
-shift
-unshift
+    ``
 
-opendir
-closedir
-chdir
-mkdir
+    exec
 
-unlink
-rename
-chmod
-stat
+## å‡½æ•°
 
-system
-`ls`
-qx{}
-====================================================================================================
+    int    intï¼ˆ5.6ï¼‰  =5
+    length  length("nose")  =4
+    lc  lcï¼ˆ"ME TOO"ï¼‰ ="me too"
+    uc  ucï¼ˆ"hal 9000"ï¼‰  ="HAL 9000"
+    cos cosï¼ˆ50ï¼‰ =.964966
+    rand randï¼ˆ5ï¼‰    è¿”å›ä»0åˆ°å°äºè¯¥å‚æ•°å€¼ä¹‹é—´çš„ä¸€ä¸ªéšæœºæ•°å­—ã€‚å¦‚æœè¯¥å‚æ•°è¢«çœç•¥ï¼Œåˆ™è¿”å›0è‡³1ä¹‹é—´çš„ä¸€ä¸ªæ•°å­—
+
+    print
+    split
+    join
+    scalar
+    sort	å¯ç”¨è¯­å¥å—
+    
+    open
+    close
+    chomp
+    
+    index
+    rindex
+    substr
+    
+    push
+    pop
+    shift
+    unshift
+    
+    opendir
+    closedir
+    chdir
+    mkdir
+    
+    unlink
+    rename
+    chmod
+    stat
+    
+    system
+    `ls`
+    qx{}
+
+
+## å¼•ç”¨
+
+    &ab=\$ab
+    $$ab
+
+## å¸¸ç”¨
+
+### å‚æ•°è§£æ
+
+<http://www.php-oa.com/2009/04/04/perl_getopt-long.html>
+
+    use strict;
+    use Getopt::Long;
+    
+    my $STATE_OK=0;
+    my $STATE_WARNING=1;
+    my $STATE_CRITICAL=2;
+    my $STATE_UNKNOWN=3;
+    
+    my $input = @ARGV;
+    my $host = "127.0.0.1";
+    my $port = 9425;
+    my $warning = 0;
+    my $critical = 0;
+    
+    my $help = undef;
+    my $debug = undef;
+    
+    my $remaining = undef;
+    my $deadnodes = undef;
+    my $failedvolumes = undef;
+    my $filetotal = undef;
+    my $unreplicated = undef;
+    my $blacknodes = undef;
+    my $jobsinfo = undef;
+    my $cptime = undef;
+    my $editlog = undef;
+    
+    
+    GetOptions (
+        'h'     => \$help,           'help'             => \$help,
+        'd'     => \$debug,          'debug'            => \$debug,
+        'ht=s'  => \$host,           'host=s'           => \$host,
+        'pt=i'  => \$port,           'port=i'           => \$port,
+        'rema'  => \$remaining,      'remaining'        => \$remaining,
+        'dead'  => \$deadnodes,      'deadnodes'        => \$deadnodes,
+        'volu'  => \$failedvolumes,  'failedvolumes'    => \$failedvolumes,
+        'file'  => \$filetotal,      'filetotal'        => \$filetotal,
+        'unre'  => \$unreplicated,   'unreplicated'     => \$unreplicated,
+        'blck'  => \$blacknodes,     'blacknodes'       => \$blacknodes,
+        'jobs'  => \$jobsinfo,       'jobsinfo'         => \$jobsinfo,
+        'cpti'  => \$cptime,         'cptime'           => \$cptime,
+    	'elog'  => \$editlog,        'editlog'          => \$editlog,
+        'w=s'   => \$warning,        'warning=s'        => \$warning,
+        'c=s'   => \$critical,       'critical=s'       => \$critical,
+    );
+
+
+    sub process_args {
+        while (@ARGV) {
+            $a = shift @ARGV;
+            if ($a eq "-h") {
+                Usage();
+            } elsif ($a eq "-f") {
+                $file= shift @ARGV;
+            } elsif ($a eq "-s") {
+                $string= shift @ARGV ;
+            } else {
+                Usage();
+            }
+        }
+    }

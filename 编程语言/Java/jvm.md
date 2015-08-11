@@ -12,12 +12,24 @@
 
 ## 常用参数
 
--XX:OnOutOfMemoryError="kill -9 %p"
--XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/usr/tmp
-JVM_ARGS="-Xms1536m -Xms1536m -XX:OnOutOfMemoryError='kill;-9;%p'"
+	-XX:OnOutOfMemoryError="kill -9 %p"
+	-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/usr/tmp
+	JVM_ARGS="-Xms1536m -Xms1536m -XX:OnOutOfMemoryError='kill -9 %p'"
 
-hbase中：
-"$JAVA" -XX:OnOutOfMemoryError="kill -9 %p" $JAVA_HEAP_MAX $HBASE_OPTS -classpath "$CLASSPATH" $CLASS "$@"
+	JOPTS="-server -XX:+UseParNewGC -XX:+UseConcMarkSweepGC \
+	-XX:-CMSConcurrentMTEnabled -XX:CMSInitiatingOccupancyFraction=70 \
+	-XX:+CMSParallelRemarkEnabled \
+	-XX:+UseCMSCompactAtFullCollection \
+	-XX:MaxDirectMemorySize=512m \
+	-Dclient.encoding.override=UTF-8 -Dfile.encoding=UTF-8 \
+	-Duser.language=zh -Duser.region=CN"
+
+	hbase中：
+	"$JAVA" -XX:OnOutOfMemoryError="kill -9 %p" $JAVA_HEAP_MAX $HBASE_OPTS -classpath "$CLASSPATH" $CLASS "$@"
+
+
+	-XX:+DisableExplicitGC	可能会触发 Direct ByteBuffer 的oom，可以用 -XX:+ExplicitGCInvokesConcurrent 或 -XX:+ExplicitGCInvokesConcurrentAndUnloadsClasses  优化
+
 
 ## 常用GC
 

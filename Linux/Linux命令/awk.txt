@@ -5,6 +5,9 @@
 
 head -n 10000 global/users.text/2015/04/13/part-00000 | grep tag_0004=0004 | awk 'BEGIN{FS="`"}{for(i=1;i<=NF;i++){split($i,a,"=");if(a[1]=="tag_0004" || a[1]=="fr" || a[1] =="uid"){printf("%s\t", $i)};} print ""}'|grep iphone
 head -n 10000 global/users.text/2015/04/13/part-00000 | awk 'BEGIN{FS="`"}{for(i=1;i<=NF;i++){split($i,a,"=");if( a[1]=="fr" || a[1] =="uid"){printf("%s\t", $i)};} print ""}'
+cat part-* | awk 'BEGIN{FS="`";count=0}{for(i=1;i<=NF;i++){split($i,a,"=");if( a[1]=="lives" ){ if(a[2]*1>2){count+=1}}}}END{print count;}'
+
+字符乘以1就可以转换成数字了，然后就可以比较了
 
 
 [官方教程](http://www.gnu.org/software/gawk/manual/gawk.html)
