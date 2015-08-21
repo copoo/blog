@@ -604,6 +604,94 @@ spark sql支持用户接口，不需要写任何代码，使用sql就可以。
         CACHE TABLE logs_last_month;
         UNCACHE TABLE logs_last_month;
 
+## JNI
+
+已知给定我一个 .so（和对应的.a） 文件和对应的 .h文件。要求在spark中使用它。
+
+以JAVA的方法，创建JNI。（相对scala，JAVA的方法使用场景广一些）
+
+    public class SnToDn {
+    	static {
+    		String dir = System.getProperty("user.dir");
+    		String libFile = dir + "/libucsnjni.so";
+    		try {
+    			System.load(new File(libFile).getAbsolutePath());
+    		} catch (Throwable e) {
+    			e.printStackTrace();
+    			System.loadLibrary("ucsnjni");
+    		}
+    	}
+    
+    	// 根椐snid生成dn
+    	static public native String sn2dn(String sn);
+    
+    	static public native boolean isValidDn(String dn);
+    
+    	static public native boolean isValidSn(String sn);
+    
+    	static public String getSnidFromSn(String sn) {
+    		if (sn != null && isValidSn(sn)) {
+    			String[] ss = sn.split("-");
+    			if (ss.length > 1) {
+    				return ss[1];
+    			}
+    		}
+    		return null;
+    	}
+    
+    	static public String getSnidFromDn(String dn) {
+    		if (dn != null && isValidDn(dn)) {
+    			String[] ss = dn.split("-");
+    			if (ss.length > 0) {
+    				return ss[0];
+    			}
+    		}
+    		return null;
+    	}
+    
+    	public static void main(String[] args) {
+    		String sn = "1507-10114609980-3221d021";
+    		if (args.length > 0) {
+    			sn = args[0];
+    		}
+    		String snid = getSnidFromSn(sn);
+    		String dn = sn2dn(sn);
+    
+    		System.out.println("sn=" + sn);
+    		System.out.println("sn is " + isValidSn(sn));
+    		System.out.println("snid=" + snid);
+    		System.out.println("dn=" + dn);
+    		System.out.println("dn is " + isValidDn(dn));
+    	}
+    }
+
+1.  创建Java的类，其中声明native方法
+2.  javac javah命令编译它们，得到一个 .h文件
+3.  对.h文件，实现它
+4.  编译实现，得到 .so文件
+
+    这个编译过程比较费劲，因为不想携带2个.so，所以，用到了如下编译参数
+
+        g++ -shared -Wall -O3 -fPIC \
+    		-I/home/zhaigy/local/jdk/include -I/home/zhaigy/local/jdk/include/linux \
+    		-L./lib64 \
+    		-L/usr/lib64 \
+    		-L/lib64 \
+    		-Wl,-Bstatic -Wl,--whole-archive -lucsn \
+    		-Wl,-Bdynamic -Wl,--no-whole-archive -lm -lcrypto \
+    		-cpp com_ucweb_waup_jni_SnToDn.cpp \
+    		-o libucsnjni.so
+
+    -Wl,-Bstatic -Wl,--whole-archive -lucsn \ 静态连接 包含整个.a 文件  
+    -Wl,-Bdynamic -Wl,--no-whole-archive -lm -lcrypto \ 动态连接，取消包含整个.a
+
+5.  spark-shell时，需要上传这个.so文件。 我使用了 --files参数
+
+        --files "./libucsnjni.so"
+
+    注意代码中：System.load(new File(libFile).getAbsolutePath());
+
+运行测试通过。不需要事先把 .so文件部署到 所有机器。
 
 ## 一些问题
 
