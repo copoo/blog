@@ -693,10 +693,89 @@ spark sql支持用户接口，不需要写任何代码，使用sql就可以。
 
 运行测试通过。不需要事先把 .so文件部署到 所有机器。
 
+
+## Spark 下操作 HBase（1.0.0 新 API）
+
+[Spark 下操作 HBase（1.0.0 新 API）](http://wuchong.me/blog/2015/04/06/spark-on-hbase-new-api/)
+
+
 ## 一些问题
 
 ### 大数据下，Lost executor on YARN
 
+SBT 加载依赖项
+
+    libraryDependencies += "org.apache.hbase" % "hbase-client" % "1.0.0"
+    libraryDependencies += "org.apache.hbase" % "hbase-common" % "1.0.0"
+    libraryDependencies += "org.apache.hbase" % "hbase-server" % "1.0.0"
+
+Connection是线程安全的,推荐使用单例，其工厂方法需要一个HBaseConfiguration。
+
+    val conf = HBaseConfiguration.create()
+    conf.set("hbase.zookeeper.property.clientPort", "2181")
+    conf.set("hbase.zookeeper.quorum", "master")
+    
+    // Connection 的创建是个重量级的工作，线程安全，是操作hbase的入口
+    val conn = ConnectionFactory.createConnection(conf)
+
+使用Admin创建和删除表
+
+    val userTable = TableName.valueOf("user")
+    
+    //创建 user 表
+    val tableDescr = new HTableDescriptor(userTable)
+    tableDescr.addFamily(new HColumnDescriptor("basic".getBytes))
+    println("Creating table `user`. ")
+    if (admin.tableExists(userTable)) {
+      admin.disableTable(userTable)
+      admin.deleteTable(userTable)
+    }
+    admin.createTable(tableDescr)
+
+HBase 上的操作都需要先创建一个操作对象Put,Get,Delete等，然后调用Table上的相对应的方法
+    
+    val table = conn.getTable(userTable)
+
+    //准备插入一条 key 为 id001 的数据
+    val p = new Put("id001".getBytes)
+    //为put操作指定 column 和 value （以前的 put.add 方法被弃用了）
+    p.addColumn("basic".getBytes,"name".getBytes, "wuchong".getBytes)
+    //提交
+    table.put(p)
+
+    //查询某条数据
+    val g = new Get("id001".getBytes)
+    val result = table.get(g)
+    val value = Bytes.toString(result.getValue("basic".getBytes,"name".getBytes))
+    println("GET id001 :"+value)
+
+    //扫描数据
+    val s = new Scan()
+    s.addColumn("basic".getBytes,"name".getBytes)
+    val scanner = table.getScanner(s)
+
+    try{
+      for(r <- scanner){
+        println("Found row: "+r)
+        println("Found value: "+Bytes.toString(
+          r.getValue("basic".getBytes,"name".getBytes)))
+      }
+    }finally {
+      //确保scanner关闭
+      scanner.close()
+    }
+
+    //删除某条数据,操作方式与 Put 类似
+    val d = new Delete("id001".getBytes)
+    d.addColumn("basic".getBytes,"name".getBytes)
+    table.delete(d)
+    
+    table.close()
+
+Spark 操作 HBase 写入 HBase
+
+需要用到PairRDDFunctions.saveAsHadoopDataset。
+需要将 RDD[(uid:Int, name:String, age:Int)] 转换成 RDD[(ImmutableBytesWritable, Put)]。
 
 
 ## 分析文章
